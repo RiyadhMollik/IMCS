@@ -205,6 +205,7 @@ export default function MessagesPage() {
   const [reactionPickerForMessageId, setReactionPickerForMessageId] = useState<number | null>(null);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [totalUnreadMessages, setTotalUnreadMessages] = useState(0);
   const [typingByConversation, setTypingByConversation] = useState<Record<string, string>>({});
   const [mentionSuggestions, setMentionSuggestions] = useState<Array<{ id: number; username: string }>>([]);
   const [mentionTokenStart, setMentionTokenStart] = useState<number | null>(null);
@@ -226,6 +227,8 @@ export default function MessagesPage() {
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const localTypingActiveRef = useRef(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const lastSoundPlayedAtRef = useRef(0);
   
   // WebSocket hook for online status
   const { onlineUsers, connected } = useOnlineUsers();
@@ -263,6 +266,66 @@ export default function MessagesPage() {
     }, 3000);
   }, []);
 
+  const loadUnreadCount = useCallback(async () => {
+    if (!isAuthenticated) {
+      setTotalUnreadMessages(0);
+      return;
+    }
+
+    try {
+      const response = await api.get('/messages/unread_count/');
+      setTotalUnreadMessages(Number(response.data?.count || 0));
+    } catch (error) {
+      console.error('Failed to load unread message count:', error);
+    }
+  }, [isAuthenticated]);
+
+  const playIncomingMessageSound = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    // Avoid overlapping beeps when multiple events arrive at once.
+    const now = Date.now();
+    if (now - lastSoundPlayedAtRef.current < 500) {
+      return;
+    }
+    lastSoundPlayedAtRef.current = now;
+
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) {
+        return;
+      }
+
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContextClass();
+      }
+
+      const ctx = audioContextRef.current;
+      if (ctx.state === 'suspended') {
+        void ctx.resume();
+      }
+
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+
+      gainNode.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.2);
+    } catch (error) {
+      console.error('Failed to play message sound:', error);
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -279,6 +342,10 @@ export default function MessagesPage() {
     return () => {
       if (toastTimeoutRef.current) {
         clearTimeout(toastTimeoutRef.current);
+      }
+
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        void audioContextRef.current.close();
       }
     };
   }, []);
@@ -907,6 +974,30 @@ export default function MessagesPage() {
     }
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    void loadUnreadCount();
+    const interval = setInterval(() => {
+      void loadUnreadCount();
+    }, 5000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void loadUnreadCount();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isAuthenticated, loadUnreadCount]);
+
   const loadUserSettings = async () => {
     try {
       const response = await api.get('/users/settings/');
@@ -1251,6 +1342,7 @@ export default function MessagesPage() {
     }
 
     await Promise.allSettled(unreadIds.map((id) => api.post(`/messages/${id}/mark_read/`)));
+    void loadUnreadCount();
   };
 
   const connectWebSocket = (userId: number) => {
@@ -1281,8 +1373,13 @@ export default function MessagesPage() {
         const message = data.message;
         const senderId = typeof message?.sender === 'string' ? undefined : message?.sender?.id;
         if (senderId && senderId !== user?.id && message?.id) {
-          api.post(`/messages/${message.id}/mark_delivered/`).catch(() => undefined);
-          api.post(`/messages/${message.id}/mark_read/`).catch(() => undefined);
+          playIncomingMessageSound();
+          void Promise.allSettled([
+            api.post(`/messages/${message.id}/mark_delivered/`),
+            api.post(`/messages/${message.id}/mark_read/`),
+          ]).then(() => {
+            void loadUnreadCount();
+          });
         }
 
         const receiverId = typeof message?.receiver === 'string' ? undefined : message?.receiver?.id;
@@ -1423,8 +1520,13 @@ export default function MessagesPage() {
         });
 
         if (incomingMessage.sender && typeof incomingMessage.sender !== 'string' && incomingMessage.sender.id !== user?.id && incomingMessage.id) {
-          api.post(`/messages/${incomingMessage.id}/mark_delivered/`).catch(() => undefined);
-          api.post(`/messages/${incomingMessage.id}/mark_read/`).catch(() => undefined);
+          playIncomingMessageSound();
+          void Promise.allSettled([
+            api.post(`/messages/${incomingMessage.id}/mark_delivered/`),
+            api.post(`/messages/${incomingMessage.id}/mark_read/`),
+          ]).then(() => {
+            void loadUnreadCount();
+          });
         }
       } else if (data.type === 'message-reaction') {
         setMessages((prev) => prev.map((message) => {
@@ -1986,14 +2088,15 @@ export default function MessagesPage() {
       return '';
     }
 
-    const receipts = message.receipts || [];
+    const normalizeStatus = (status?: string) => (status || '').toLowerCase();
+    const receipts = (message.receipts || []).filter((receipt) => receipt.user?.id !== senderId);
     if (!receipts.length) {
-      return 'sent';
+      return message.is_read ? 'read' : 'sent';
     }
 
     if (selectedGroupConversationId) {
-      const readCount = receipts.filter((receipt) => receipt.status === 'read').length;
-      const deliveredCount = receipts.filter((receipt) => ['delivered', 'read'].includes(receipt.status)).length;
+      const readCount = receipts.filter((receipt) => normalizeStatus(receipt.status) === 'read').length;
+      const deliveredCount = receipts.filter((receipt) => ['delivered', 'read'].includes(normalizeStatus(receipt.status))).length;
       if (readCount > 0) {
         return `read ${readCount}/${receipts.length}`;
       }
@@ -2003,9 +2106,12 @@ export default function MessagesPage() {
       return 'sent';
     }
 
-    const status = receipts[0]?.status;
-    if (status === 'read') return 'read';
-    if (status === 'delivered') return 'delivered';
+    const hasRead = receipts.some((receipt) => normalizeStatus(receipt.status) === 'read');
+    if (hasRead) return 'read';
+
+    const hasDelivered = receipts.some((receipt) => ['delivered', 'read'].includes(normalizeStatus(receipt.status)));
+    if (hasDelivered) return 'delivered';
+
     return 'sent';
   };
 
@@ -2560,8 +2666,8 @@ export default function MessagesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-gray-600 text-2xl">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="text-slate-600 text-2xl font-semibold tracking-tight">Loading...</div>
       </div>
     );
   }
@@ -2579,36 +2685,36 @@ export default function MessagesPage() {
     : 'Call';
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#f8fafc_0%,_#eef2ff_45%,_#e2e8f0_100%)]">
       {/* Header */}
-      <header className="bg-white shadow-md sticky top-0 z-10">
-        <div className="container mx-auto px-4">
+      <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-bold text-blue-600">IMCS</h1>
+              <h1 className="text-2xl font-black tracking-tight text-sky-700">IMCS</h1>
               
               <nav className="hidden md:flex space-x-4">
                 <button
                   onClick={() => router.push('/dashboard')}
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 font-medium"
+                  className="text-slate-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2 rounded-lg font-medium transition"
                 >
                   Dashboard
                 </button>
                 <button
                   onClick={() => router.push('/calls')}
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 font-medium"
+                  className="text-slate-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2 rounded-lg font-medium transition"
                 >
                   Calls
                 </button>
                 <button
                   onClick={() => router.push('/contacts')}
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 font-medium"
+                  className="text-slate-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2 rounded-lg font-medium transition"
                 >
                   Contacts
                 </button>
                 <button
                   onClick={() => router.push('/messages')}
-                  className="text-blue-600 border-b-2 border-blue-600 px-3 py-2 font-medium"
+                  className="text-sky-700 bg-sky-100/80 px-3 py-2 rounded-lg font-semibold"
                 >
                   Messages
                 </button>
@@ -2618,14 +2724,14 @@ export default function MessagesPage() {
             <div className="flex items-center space-x-4">
               <NotificationBell />
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                <div className="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
                   {user.username.charAt(0).toUpperCase()}
                 </div>
-                <span className="font-medium text-gray-800 hidden sm:block">{user.username}</span>
+                <span className="font-medium text-slate-800 hidden sm:block">{user.username}</span>
               </div>
               <button
                 onClick={logout}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium transition"
+                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg font-medium transition shadow-sm"
               >
                 Logout
               </button>
@@ -2635,17 +2741,24 @@ export default function MessagesPage() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
-        <div className="bg-white rounded-lg shadow-md overflow-visible" style={{ height: 'calc(100vh - 160px)' }}>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-white/95 rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/70 overflow-visible" style={{ height: 'calc(100vh - 160px)' }}>
           <div className="flex h-full">
             {/* Users List */}
-            <div className="w-1/3 border-r border-gray-200 overflow-y-auto">
-              <div className="p-4 border-b border-gray-200">
+            <div className="w-[34%] min-w-[300px] border-r border-slate-200/80 overflow-y-auto bg-slate-50/70">
+              <div className="p-4 border-b border-slate-200/80 bg-white/80 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-800">Messages</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold tracking-tight text-slate-800">Messages</h2>
+                    {totalUnreadMessages > 0 && (
+                      <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-700 min-w-[22px]">
+                        {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={() => setShowCreateGroupModal(true)}
-                    className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded hover:bg-indigo-200"
+                    className="text-xs bg-sky-100 text-sky-700 px-3 py-1.5 rounded-lg hover:bg-sky-200 font-medium"
                   >
                     Create Group
                   </button>
@@ -2653,25 +2766,25 @@ export default function MessagesPage() {
                 <div className="flex items-center justify-between mt-2">
                   <button
                     onClick={() => setShowHiddenChats((prev) => !prev)}
-                    className="text-xs text-gray-600 hover:text-gray-800"
+                    className="text-xs text-slate-500 hover:text-slate-700"
                   >
                     {showHiddenChats ? 'Hide hidden chats' : 'Show hidden chats'}
                   </button>
                 </div>
                 {connected ? (
-                  <p className="text-xs text-green-600 flex items-center mt-1">
+                  <p className="text-xs text-emerald-600 flex items-center mt-1 font-medium">
                     <span className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
                     Live ({onlineUsers.length} online)
                   </p>
                 ) : (
-                  <p className="text-xs text-red-600 flex items-center mt-1">
+                  <p className="text-xs text-rose-600 flex items-center mt-1 font-medium">
                     <span className="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
                     Connecting...
                   </p>
                 )}
               </div>
-              <div className="border-b border-gray-100">
-                <div className="px-4 py-2 text-xs uppercase tracking-wide text-gray-500 font-semibold">
+              <div className="border-b border-slate-200/70">
+                <div className="px-4 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 font-semibold">
                   Direct Messages
                 </div>
                 {sortedUsersWithOnlineStatus.length === 0 ? (
@@ -2688,8 +2801,8 @@ export default function MessagesPage() {
                   <button
                     key={u.id}
                     onClick={() => openDirectConversation(u)}
-                    className={`w-full p-4 flex items-center space-x-3 hover:bg-gray-50 transition ${
-                      selectedUser?.id === u.id ? 'bg-blue-50' : ''
+                    className={`w-full p-4 flex items-center space-x-3 transition rounded-xl mx-2 my-1 border ${
+                      selectedUser?.id === u.id ? 'bg-sky-50 border-sky-200 shadow-sm' : 'border-transparent hover:bg-white hover:border-slate-200'
                     }`}
                   >
                     <div className="relative">
@@ -2715,7 +2828,7 @@ export default function MessagesPage() {
               </div>
 
               <div>
-                <div className="px-4 py-2 text-xs uppercase tracking-wide text-gray-500 font-semibold">
+                <div className="px-4 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 font-semibold">
                   Groups
                 </div>
                 {visibleGroupConversations.length === 0 ? (
@@ -2729,8 +2842,8 @@ export default function MessagesPage() {
                       <button
                         key={group.id}
                         onClick={() => openGroupConversation(group)}
-                        className={`w-full p-4 flex items-center space-x-3 hover:bg-gray-50 transition ${
-                          selectedGroupConversationId === group.id ? 'bg-indigo-50' : ''
+                        className={`w-full p-4 flex items-center space-x-3 transition rounded-xl mx-2 my-1 border ${
+                          selectedGroupConversationId === group.id ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'border-transparent hover:bg-white hover:border-slate-200'
                         }`}
                       >
                         <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
@@ -2793,11 +2906,11 @@ export default function MessagesPage() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col bg-gradient-to-b from-slate-50/40 to-white">
               {selectedUserWithStatus || selectedGroupConversationId ? (
                 <>
                   {/* Chat Header */}
-                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                  <div className="p-4 border-b border-slate-200/80 bg-white/90 backdrop-blur-sm flex items-center justify-between">
                     {selectedGroupConversationId ? (
                       <div className="flex items-center justify-between w-full">
                         <div>
@@ -3002,12 +3115,12 @@ export default function MessagesPage() {
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           placeholder="Search messages"
-                          className="flex-1 px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+                          className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
                         />
                         <select
                           value={messageFilter}
                           onChange={(e) => setMessageFilter(e.target.value as 'all' | 'pinned' | 'polls' | 'mentions')}
-                          className="px-2 py-1.5 border border-gray-300 rounded-md text-sm"
+                          className="px-2 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
                         >
                           <option value="all">All</option>
                           <option value="pinned">Pinned</option>
@@ -3017,7 +3130,7 @@ export default function MessagesPage() {
                       </div>
 
                       {/* Messages */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[linear-gradient(180deg,_rgba(248,250,252,0.7)_0%,_rgba(255,255,255,0.95)_100%)]">
                         {loadingMessages ? (
                           <div className="text-center text-gray-500">Loading messages...</div>
                         ) : timelineItems.length === 0 ? (
@@ -3061,10 +3174,10 @@ export default function MessagesPage() {
                               <div key={`message-${message.id}-${index}`} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-2' : 'order-1'}`}>
                                   <div
-                                    className={`px-4 py-2 rounded-lg ${
+                                    className={`px-4 py-2.5 rounded-2xl shadow-sm border ${
                                       isOwn
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-200 text-gray-800'
+                                        ? 'bg-sky-600 border-sky-500 text-white'
+                                        : 'bg-white border-slate-200 text-slate-800'
                                     }`}
                                   >
                                     {attachment ? (
@@ -3354,7 +3467,7 @@ export default function MessagesPage() {
                       </div>
 
                       {/* Message Input */}
-                      <form onSubmit={sendMessage} className="p-4 border-t border-gray-200">
+                      <form onSubmit={sendMessage} className="p-4 border-t border-slate-200 bg-white/90 backdrop-blur-sm">
                         {currentConversationKey && draftByConversation[currentConversationKey] && (
                           <p className="text-xs text-gray-500 mb-2">Draft saved</p>
                         )}
@@ -3369,7 +3482,7 @@ export default function MessagesPage() {
                             type="button"
                             onClick={handleSelectAttachment}
                             disabled={uploadingAttachment}
-                            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50"
+                            className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-50"
                             title="Send image or file"
                           >
                             {uploadingAttachment ? (
@@ -3447,13 +3560,13 @@ export default function MessagesPage() {
                               onChange={(e) => handleMessageInputChange(e.target.value, e.target.selectionStart ?? e.target.value.length)}
                               onKeyDown={handleMessageInputKeyDown}
                               placeholder="Type a message, emoji, or send a file..."
-                              className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-4 py-2.5 border border-slate-300 rounded-full bg-white focus:outline-none focus:ring-2 focus:ring-sky-300"
                             />
                           </div>
                           <button
                             type="submit"
                             disabled={!messageContent.trim()}
-                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white p-3 rounded-full transition"
+                            className="bg-sky-600 hover:bg-sky-700 disabled:bg-slate-400 text-white p-3 rounded-full transition shadow-sm"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

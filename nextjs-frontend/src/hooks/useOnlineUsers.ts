@@ -18,6 +18,7 @@ export function useOnlineUsers() {
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const intentionalCloseRef = useRef(false);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
 
@@ -31,15 +32,18 @@ export function useOnlineUsers() {
       return;
     }
 
-    // Close existing connection
+    // Reuse an active socket instead of reconnecting on every render.
     if (wsRef.current) {
-      wsRef.current.close();
+      if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+        return;
+      }
+      wsRef.current = null;
     }
 
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsHost = window.location.hostname;
-    const wsPort = '8001'; // Django backend port
-    const wsUrl = `${wsProtocol}//${wsHost}:${wsPort}/ws/status/?token=${token}`;
+    const defaultWsBase = `${wsProtocol}//${window.location.hostname}:9006/ws`;
+    const wsBase = (process.env.NEXT_PUBLIC_WS_BASE || defaultWsBase).replace(/\/$/, '');
+    const wsUrl = `${wsBase}/status/?token=${token}`;
 
     console.log('Connecting to WebSocket:', wsUrl);
 
@@ -49,6 +53,9 @@ export function useOnlineUsers() {
       console.log('✅ WebSocket connected');
       setConnected(true);
       reconnectAttempts.current = 0;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
       
       // Send ping to keep connection alive
       const pingInterval = setInterval(() => {
@@ -105,6 +112,11 @@ export function useOnlineUsers() {
       console.log('🔌 WebSocket closed:', event.code, event.reason);
       setConnected(false);
 
+      if (intentionalCloseRef.current) {
+        intentionalCloseRef.current = false;
+        return;
+      }
+
       // Clear ping interval
       if ((ws as any).pingInterval) {
         clearInterval((ws as any).pingInterval);
@@ -134,6 +146,7 @@ export function useOnlineUsers() {
         clearTimeout(reconnectTimeoutRef.current);
       }
       if (wsRef.current) {
+        intentionalCloseRef.current = true;
         if ((wsRef.current as any).pingInterval) {
           clearInterval((wsRef.current as any).pingInterval);
         }

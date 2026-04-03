@@ -63,3 +63,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+
+# Local TLS certs for nginx proxy
+nginx/certs/server.crt
+nginx/certs/server.key

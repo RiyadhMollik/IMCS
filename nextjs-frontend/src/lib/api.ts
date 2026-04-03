@@ -7,7 +7,7 @@ import {
 } from '@/lib/authTokens';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://203.190.12.139:9006/api',
   headers: {
     'Content-Type': 'application/json',
   },

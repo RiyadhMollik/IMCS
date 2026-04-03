@@ -41,6 +41,31 @@ export function useWebRTC() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
+  const getMediaAccessErrorMessage = useCallback((error: unknown, callType: 'audio' | 'video') => {
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      return 'Media access is blocked on insecure HTTP. Use HTTPS (or localhost) to start calls.';
+    }
+
+    if (error instanceof DOMException) {
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        return 'Camera/microphone permission denied. Please allow access in your browser settings.';
+      }
+      if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        return callType === 'video'
+          ? 'No camera/microphone found. Connect a camera and microphone, then try again.'
+          : 'No microphone found. Connect a microphone, then try again.';
+      }
+      if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        return 'Camera/microphone is in use by another app. Close that app and try again.';
+      }
+      if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
+        return 'Your camera does not support the requested settings. Try again or use audio call.';
+      }
+    }
+
+    return 'Could not access camera/microphone.';
+  }, []);
+
   // Get local media stream
   const getLocalStream = useCallback(async (callType: 'audio' | 'video') => {
     try {
@@ -76,9 +101,9 @@ export function useWebRTC() {
       return stream;
     } catch (error) {
       console.error('Error accessing media devices:', error);
-      throw new Error('Could not access camera/microphone');
+      throw new Error(getMediaAccessErrorMessage(error, callType));
     }
-  }, []);
+  }, [getMediaAccessErrorMessage]);
 
   // Setup peer connection
   const setupPeerConnection = useCallback((stream: MediaStream) => {
@@ -196,10 +221,10 @@ export function useWebRTC() {
   // Start a call
   const startCall = useCallback(async (recipientUsername: string, callType: 'audio' | 'video') => {
     try {
-      setIsCallActive(true);
       setCallStatus('Connecting...');
 
       const stream = await getLocalStream(callType);
+      setIsCallActive(true);
       const pc = setupPeerConnection(stream);
 
       // Create call via API
@@ -287,7 +312,11 @@ export function useWebRTC() {
     } catch (error) {
       console.error('Error starting call:', error);
       endCall();
-      throw error;
+      const message = error instanceof Error ? error.message : 'Unable to start call.';
+      setCallStatus(message);
+      if (typeof window !== 'undefined') {
+        window.alert(message);
+      }
     }
   }, [getLocalStream, setupPeerConnection]);
 
@@ -364,7 +393,11 @@ export function useWebRTC() {
     } catch (error) {
       console.error('Error accepting call:', error);
       endCall();
-      throw error;
+      const message = error instanceof Error ? error.message : 'Unable to accept call.';
+      setCallStatus(message);
+      if (typeof window !== 'undefined') {
+        window.alert(message);
+      }
     }
   }, [getLocalStream, setupPeerConnection]);
 

@@ -7,7 +7,7 @@ services:
       MYSQL_PASSWORD: sociala_password
       MYSQL_ROOT_PASSWORD: root_password
     ports:
-      - "3307:3306"
+      - "9007:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -31,7 +31,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "8001:8001"
+      - "9006:8001"
     volumes:
       - .:/app
     command: >
@@ -40,15 +40,25 @@ services:
   frontend:
     build: ./nextjs-frontend
     environment:
-      NEXT_PUBLIC_API_URL: "http://localhost:8001/api"
-      NEXT_PUBLIC_WS_BASE: "ws://localhost:8001/ws"
+      NEXT_PUBLIC_API_URL: "https://203.190.12.139:9008/api"
+      NEXT_PUBLIC_WS_BASE: "wss://203.190.12.139:9008/ws"
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - backend
-    ports:
-      - "3000:3000"
     volumes:
       - ./nextjs-frontend:/app
+      - /app/node_modules
+
+  proxy:
+    image: nginx:alpine
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "9008:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
 
 volumes:
   mysql_data:

@@ -35,7 +35,7 @@ export const useFriendRequests = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const API_BASE_URL = 'http://localhost:8000/api';
+  const API_BASE_URL = 'http://localhost:8001/api';
 
   const getToken = () => Cookies.get('access_token');
 

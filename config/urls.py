@@ -16,6 +16,8 @@ urlpatterns = [
     
     # Apps
     path('api/users/', include('users.urls')),
+    path('api/', include('messaging.urls')),
+    path('api/', include('files.urls')),
     path('api/', include('calls.urls')),
 ]
 

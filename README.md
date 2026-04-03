@@ -1,11 +1,12 @@
 # Audio & Video Calling System
 
-A production-ready audio and video calling system built with **Django Rest Framework**, **Django Channels**, **WebRTC**, and **MySQL**.
+A production-ready audio and video calling system built with **Django Rest Framework**, **Django Channels**, **WebRTC**, **mediasoup SFU**, and **MySQL**.
 
 ## 🎯 Features
 
 - ✅ Audio & Video calling
 - ✅ Real-time WebRTC signaling via WebSockets
+- ✅ mediasoup SFU for scalable group audio/video
 - ✅ JWT Authentication
 - ✅ Call management (start, accept, reject, end, cancel)
 - ✅ Call history & missed calls tracking
@@ -23,7 +24,9 @@ Frontend (Web/Mobile)
         ↓
     WebSocket (Django Channels)
         ↓
-    WebRTC (P2P Media)
+   WebRTC Signaling (Django Channels)
+      ↓
+   mediasoup SFU (Server-side media routing)
         ↓
     STUN/TURN Servers
 ```
@@ -38,7 +41,34 @@ Frontend (Web/Mobile)
 | Database | MySQL |
 | Authentication | JWT (Simple JWT) |
 | Real-time Signaling | Redis + Channels |
-| Media Streaming | WebRTC |
+| Group Media Streaming | WebRTC + mediasoup SFU |
+
+## SFU Server (mediasoup)
+
+Group conference media is now routed by mediasoup.
+
+1. Go to the SFU folder:
+
+```bash
+cd mediasoup-server
+```
+
+2. Create environment file:
+
+```bash
+cp .env.example .env
+```
+
+3. Install and run:
+
+```bash
+npm install
+npm run dev
+```
+
+Default mediasoup server URL is `http://localhost:4000`.
+
+For Docker or NAT deployments set `ANNOUNCED_IP` in `mediasoup-server/.env` to a browser-reachable public IP or hostname.
 
 ## 📋 Prerequisites
 
@@ -129,7 +159,7 @@ python manage.py runserver
 Or for production with Daphne (ASGI server):
 
 ```bash
-daphne -b 0.0.0.0 -p 8000 config.asgi:application
+daphne -b 0.0.0.0 -p 8001 config.asgi:application
 ```
 
 ## 📡 API Endpoints
@@ -173,7 +203,7 @@ GET    /api/calls/missed/       # Get missed calls
 ```javascript
 const roomId = 'unique-room-id';
 const token = 'your-jwt-token';
-const ws = new WebSocket(`ws://localhost:8000/ws/call/${roomId}/`);
+const ws = new WebSocket(`ws://localhost:8001/ws/call/${roomId}/`);
 ```
 
 ### WebSocket Message Types
@@ -345,7 +375,7 @@ TURN_PASSWORD=your-password
 #### Register a user
 
 ```bash
-curl -X POST http://localhost:8000/api/users/ \
+curl -X POST http://localhost:8001/api/users/ \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
@@ -358,7 +388,7 @@ curl -X POST http://localhost:8000/api/users/ \
 #### Login
 
 ```bash
-curl -X POST http://localhost:8000/api/token/ \
+curl -X POST http://localhost:8001/api/token/ \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
@@ -369,7 +399,7 @@ curl -X POST http://localhost:8000/api/token/ \
 #### Start a call
 
 ```bash
-curl -X POST http://localhost:8000/api/calls/ \
+curl -X POST http://localhost:8001/api/calls/ \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -d '{
@@ -384,7 +414,7 @@ curl -X POST http://localhost:8000/api/calls/ \
 
 ```javascript
 // 1. Get JWT token
-const response = await fetch('http://localhost:8000/api/token/', {
+const response = await fetch('http://localhost:8001/api/token/', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -395,7 +425,7 @@ const response = await fetch('http://localhost:8000/api/token/', {
 const { access } = await response.json();
 
 // 2. Initiate call via REST API
-const callResponse = await fetch('http://localhost:8000/api/calls/', {
+const callResponse = await fetch('http://localhost:8001/api/calls/', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -409,7 +439,7 @@ const callResponse = await fetch('http://localhost:8000/api/calls/', {
 const call = await callResponse.json();
 
 // 3. Connect to WebSocket
-const ws = new WebSocket(`ws://localhost:8000/ws/call/${call.room_id}/`);
+const ws = new WebSocket(`ws://localhost:8001/ws/call/${call.room_id}/`);
 
 // 4. Setup WebRTC
 const peerConnection = new RTCPeerConnection({
@@ -484,7 +514,7 @@ peerConnection.ontrack = (event) => {
 
 ```nginx
 upstream django {
-    server 127.0.0.1:8000;
+    server 127.0.0.1:8001;
 }
 
 server {
@@ -533,3 +563,5 @@ For issues and questions, please open an issue on GitHub.
 ---
 
 **Built with ❤️ using Django, DRF, WebRTC, and MySQL**
+
+# IMCS

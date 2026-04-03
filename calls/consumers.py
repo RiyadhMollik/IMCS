@@ -2,8 +2,10 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
 import json
+import re
 
 User = get_user_model()
+MENTION_RE = re.compile(r'(?<!\w)@(?P<username>[A-Za-z0-9_.-]{2,150})')
 
 
 class CallConsumer(AsyncWebsocketConsumer):
@@ -122,6 +124,7 @@ class CallConsumer(AsyncWebsocketConsumer):
                 'type': 'call_offer',
                 'offer': data.get('offer'),
                 'sender_id': self.user.id,
+                'target_id': data.get('target_id'),
                 'call_id': data.get('call_id'),
                 'call_type': data.get('call_type', 'audio')
             }
@@ -141,6 +144,7 @@ class CallConsumer(AsyncWebsocketConsumer):
                 'type': 'call_answer',
                 'answer': data.get('answer'),
                 'sender_id': self.user.id,
+                'target_id': data.get('target_id'),
                 'call_id': data.get('call_id')
             }
         )
@@ -159,6 +163,7 @@ class CallConsumer(AsyncWebsocketConsumer):
                 'type': 'ice_candidate',
                 'candidate': data.get('candidate'),
                 'sender_id': self.user.id,
+                'target_id': data.get('target_id'),
                 'call_id': data.get('call_id')
             }
         )
@@ -206,6 +211,7 @@ class CallConsumer(AsyncWebsocketConsumer):
             'type': 'call-offer',
             'offer': event['offer'],
             'sender_id': event['sender_id'],
+            'target_id': event.get('target_id'),
             'call_id': event.get('call_id'),
             'call_type': event.get('call_type')
         }))
@@ -216,6 +222,7 @@ class CallConsumer(AsyncWebsocketConsumer):
             'type': 'call-answer',
             'answer': event['answer'],
             'sender_id': event['sender_id'],
+            'target_id': event.get('target_id'),
             'call_id': event.get('call_id')
         }))
     
@@ -225,6 +232,7 @@ class CallConsumer(AsyncWebsocketConsumer):
             'type': 'ice-candidate',
             'candidate': event['candidate'],
             'sender_id': event['sender_id'],
+            'target_id': event.get('target_id'),
             'call_id': event.get('call_id')
         }))
     
@@ -382,6 +390,19 @@ class UserPresenceConsumer(AsyncWebsocketConsumer):
         }))
         
         print(f"✅ Incoming call notification sent to WebSocket")
+
+    async def incoming_group_call(self, event):
+        """Handle incoming conference/group call notification"""
+        await self.send(text_data=json.dumps({
+            'type': 'incoming-group-call',
+            'conference_id': event['conference_id'],
+            'conversation_id': event.get('conversation_id'),
+            'title': event.get('title', ''),
+            'host_id': event.get('host_id'),
+            'host_username': event.get('host_username', ''),
+            'call_type': event.get('call_type', 'video'),
+            'room_id': event.get('room_id', ''),
+        }))
     
     async def call_cancelled(self, event):
         """Handle call cancellation"""
@@ -394,7 +415,8 @@ class UserPresenceConsumer(AsyncWebsocketConsumer):
         """Handle call end notification"""
         await self.send(text_data=json.dumps({
             'type': 'call-ended',
-            'call_id': event['call_id']
+            'call_id': event['call_id'],
+            'call_data': event.get('call_data')
         }))
     
     @database_sync_to_async
@@ -460,13 +482,17 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
         """Handle incoming messages"""
         try:
             data = json.loads(text_data)
-            
-            if data.get('type') == 'message':
+
+            if data.get('type') in ['message', 'chat_message']:
+                content = data.get('content') or data.get('message')
+                if not content:
+                    return
+
                 # Save message to database
                 message = await self.save_direct_message(
                     sender_id=self.user.id,
                     receiver_id=int(self.recipient_id),
-                    content=data.get('content')
+                    content=content
                 )
                 
                 # Broadcast to conversation room
@@ -477,9 +503,19 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
                         'message_id': message.id,
                         'sender_id': self.user.id,
                         'sender_username': self.user.username,
-                        'receiver_id': message.receiver.id,
+                        'receiver_id': int(self.recipient_id),
                         'content': message.content,
-                        'created_at': message.created_at.isoformat(),
+                        'created_at': message.sent_at.isoformat(),
+                    }
+                )
+            elif data.get('type') == 'typing':
+                await self.channel_layer.group_send(
+                    self.room_name,
+                    {
+                        'type': 'typing_update',
+                        'user_id': self.user.id,
+                        'username': self.user.username,
+                        'is_typing': bool(data.get('is_typing', False)),
                     }
                 )
         except json.JSONDecodeError:
@@ -488,13 +524,22 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
     async def direct_message(self, event):
         """Send message to WebSocket"""
         await self.send(text_data=json.dumps({
-            'type': 'message',
+            'type': 'chat_message',
             'message_id': event['message_id'],
-            'sender_id': event['sender_id'],
-            'sender_username': event['sender_username'],
-            'receiver_id': event['receiver_id'],
-            'content': event['content'],
-            'created_at': event['created_at'],
+            'message': {
+                'id': event['message_id'],
+                'sender': {
+                    'id': event['sender_id'],
+                    'username': event['sender_username'],
+                },
+                'receiver': {
+                    'id': event['receiver_id'],
+                    'username': '',
+                },
+                'content': event['content'],
+                'created_at': event['created_at'],
+                'is_read': False,
+            },
         }))
     
     async def user_online(self, event):
@@ -512,16 +557,109 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
             'user_id': event['user_id'],
             'is_online': False,
         }))
+
+    async def message_reaction(self, event):
+        """Send message reaction updates to direct-message participants"""
+        await self.send(text_data=json.dumps({
+            'type': 'message-reaction',
+            'message_id': event['message_id'],
+            'reactions': event.get('reactions', []),
+            'emoji': event.get('emoji'),
+            'action': event.get('action'),
+            'actor_id': event.get('actor_id'),
+            'actor_username': event.get('actor_username'),
+        }))
+
+    async def message_receipt_update(self, event):
+        """Send receipt updates for direct messages"""
+        await self.send(text_data=json.dumps({
+            'type': 'message-receipt-update',
+            'message_id': event.get('message_id'),
+            'user_id': event.get('user_id'),
+            'status': event.get('status'),
+            'delivered_at': event.get('delivered_at'),
+            'read_at': event.get('read_at'),
+        }))
+
+    async def typing_update(self, event):
+        """Send typing updates to direct-message participants"""
+        await self.send(text_data=json.dumps({
+            'type': 'typing',
+            'user_id': event.get('user_id'),
+            'username': event.get('username'),
+            'is_typing': event.get('is_typing', False),
+        }))
+
+    async def message_update(self, event):
+        """Send message edit/pin/poll update to direct-message participants"""
+        await self.send(text_data=json.dumps({
+            'type': 'message-update',
+            'message_id': event.get('message_id'),
+            'action': event.get('action'),
+            'actor_id': event.get('actor_id'),
+            'payload': event.get('payload'),
+        }))
     
     @database_sync_to_async
     def save_direct_message(self, sender_id, receiver_id, content):
         """Save direct message to database"""
-        from .models import DirectMessage
-        message = DirectMessage.objects.create(
-            sender_id=sender_id,
-            receiver_id=receiver_id,
-            content=content
+        from messaging.models import (
+            Conversation,
+            ConversationParticipant,
+            ConversationType,
+            Message,
+            MessageReceipt,
+            MessageStatus,
         )
+        from django.utils import timezone
+        from datetime import timedelta
+
+        conversation = (
+            Conversation.objects.filter(conversation_type=ConversationType.DIRECT)
+            .filter(participants__id=sender_id)
+            .filter(participants__id=receiver_id)
+            .distinct()
+            .first()
+        )
+
+        if not conversation:
+            conversation = Conversation.objects.create(
+                conversation_type=ConversationType.DIRECT,
+                created_by_id=sender_id,
+                encrypted=True,
+            )
+            ConversationParticipant.objects.create(
+                conversation=conversation, user_id=sender_id, is_admin=True
+            )
+            ConversationParticipant.objects.create(
+                conversation=conversation, user_id=receiver_id, is_admin=False
+            )
+
+        message = Message.objects.create(
+            conversation=conversation,
+            sender_id=sender_id,
+            content=content,
+            encrypted=True,
+        )
+
+        sender = message.sender
+        default_hours = 24
+        if hasattr(sender, 'settings') and sender.settings:
+            default_hours = sender.settings.default_message_expiration_hours or 24
+        message.expires_at = timezone.now() + timedelta(hours=default_hours)
+        message.save(update_fields=['expires_at'])
+
+        mention_usernames = {m.group('username') for m in MENTION_RE.finditer(content or '')}
+        if mention_usernames:
+            mention_users = conversation.participants.filter(username__in=mention_usernames)
+            message.mentioned_users.add(*mention_users)
+
+        MessageReceipt.objects.get_or_create(
+            message=message,
+            user_id=receiver_id,
+            defaults={'status': MessageStatus.SENT},
+        )
+
         return message
     
     @database_sync_to_async
@@ -603,6 +741,13 @@ class GroupMessageConsumer(AsyncWebsocketConsumer):
         """Handle incoming messages"""
         try:
             data = json.loads(text_data)
+
+            # Re-check membership for each incoming message in case user was removed
+            # after websocket connection was established.
+            is_member = await self.check_group_membership(self.user.id, self.group_id)
+            if not is_member:
+                await self.close(code=4003)
+                return
             
             if data.get('type') == 'message':
                 # Save message to database
@@ -622,7 +767,17 @@ class GroupMessageConsumer(AsyncWebsocketConsumer):
                         'sender_username': self.user.username,
                         'group_id': int(self.group_id),
                         'content': message.content,
-                        'created_at': message.created_at.isoformat(),
+                        'created_at': message.sent_at.isoformat(),
+                    }
+                )
+            elif data.get('type') == 'typing':
+                await self.channel_layer.group_send(
+                    self.room_name,
+                    {
+                        'type': 'typing_update',
+                        'user_id': self.user.id,
+                        'username': self.user.username,
+                        'is_typing': bool(data.get('is_typing', False)),
                     }
                 )
         except json.JSONDecodeError:
@@ -630,6 +785,11 @@ class GroupMessageConsumer(AsyncWebsocketConsumer):
     
     async def group_message(self, event):
         """Send message to WebSocket"""
+        is_member = await self.check_group_membership(self.user.id, self.group_id)
+        if not is_member:
+            await self.close(code=4003)
+            return
+
         await self.send(text_data=json.dumps({
             'type': 'message',
             'message_id': event['message_id'],
@@ -657,26 +817,106 @@ class GroupMessageConsumer(AsyncWebsocketConsumer):
                 'user_id': event['user_id'],
                 'username': event['username'],
             }))
+
+    async def message_reaction(self, event):
+        """Send message reaction updates to group participants"""
+        is_member = await self.check_group_membership(self.user.id, self.group_id)
+        if not is_member:
+            await self.close(code=4003)
+            return
+
+        await self.send(text_data=json.dumps({
+            'type': 'message-reaction',
+            'message_id': event['message_id'],
+            'reactions': event.get('reactions', []),
+            'emoji': event.get('emoji'),
+            'action': event.get('action'),
+            'actor_id': event.get('actor_id'),
+            'actor_username': event.get('actor_username'),
+        }))
+
+    async def message_receipt_update(self, event):
+        """Send receipt updates for group messages"""
+        is_member = await self.check_group_membership(self.user.id, self.group_id)
+        if not is_member:
+            await self.close(code=4003)
+            return
+
+        await self.send(text_data=json.dumps({
+            'type': 'message-receipt-update',
+            'message_id': event.get('message_id'),
+            'user_id': event.get('user_id'),
+            'status': event.get('status'),
+            'delivered_at': event.get('delivered_at'),
+            'read_at': event.get('read_at'),
+        }))
+
+    async def typing_update(self, event):
+        """Send typing updates to group participants"""
+        is_member = await self.check_group_membership(self.user.id, self.group_id)
+        if not is_member:
+            await self.close(code=4003)
+            return
+
+        await self.send(text_data=json.dumps({
+            'type': 'typing',
+            'user_id': event.get('user_id'),
+            'username': event.get('username'),
+            'is_typing': event.get('is_typing', False),
+        }))
+
+    async def message_update(self, event):
+        """Send message edit/pin/poll update to group participants"""
+        is_member = await self.check_group_membership(self.user.id, self.group_id)
+        if not is_member:
+            await self.close(code=4003)
+            return
+
+        await self.send(text_data=json.dumps({
+            'type': 'message-update',
+            'message_id': event.get('message_id'),
+            'action': event.get('action'),
+            'actor_id': event.get('actor_id'),
+            'payload': event.get('payload'),
+        }))
     
     @database_sync_to_async
     def check_group_membership(self, user_id, group_id):
-        """Check if user is member of group"""
-        from .models import Group
-        try:
-            group = Group.objects.get(id=group_id)
-            return group.jvai_groups.filter(id=user_id).exists()
-        except Group.DoesNotExist:
-            return False
+        """Check if user is active participant in conversation group"""
+        from messaging.models import Conversation, ConversationType
+
+        return Conversation.objects.filter(
+            id=group_id,
+            conversation_type=ConversationType.GROUP,
+            participant_entries__user_id=user_id,
+            participant_entries__is_active=True,
+            is_active=True,
+        ).exists()
     
     @database_sync_to_async
     def save_group_message(self, sender_id, group_id, content):
-        """Save group message to database"""
-        from .models import GroupMessage
-        message = GroupMessage.objects.create(
+        """Save group message to messaging.Message"""
+        from messaging.models import Conversation, Message
+        from django.utils import timezone
+        from datetime import timedelta
+
+        conversation = Conversation.objects.get(id=group_id)
+        message = Message.objects.create(
+            conversation=conversation,
             sender_id=sender_id,
-            group_id=group_id,
-            content=content
+            content=content,
+            encrypted=True,
         )
+        sender = message.sender
+        default_hours = 24
+        if hasattr(sender, 'settings') and sender.settings:
+            default_hours = sender.settings.default_message_expiration_hours or 24
+        message.expires_at = timezone.now() + timedelta(hours=default_hours)
+        message.save(update_fields=['expires_at'])
+        mention_usernames = {m.group('username') for m in MENTION_RE.finditer(content or '')}
+        if mention_usernames:
+            mention_users = conversation.participants.filter(username__in=mention_usernames)
+            message.mentioned_users.add(*mention_users)
         return message
 
 
@@ -685,7 +925,7 @@ class GroupMessageConsumer(AsyncWebsocketConsumer):
 class UserStatusConsumer(AsyncWebsocketConsumer):
     """
     WebSocket consumer for tracking user online status
-    Each user connects to update their active status
+    Each user connects to receive real-time online users list
     """
     
     async def connect(self):
@@ -696,33 +936,68 @@ class UserStatusConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
         
-        self.status_channel = f'user_status_{self.user.id}'
+        # Join global status broadcast channel
+        self.broadcast_channel = 'online_users_broadcast'
         
-        # Join status channel
         await self.channel_layer.group_add(
-            self.status_channel,
+            self.broadcast_channel,
             self.channel_name
         )
         
         # Update user online status
         await self.update_user_online_status(self.user.id, True)
         
-        # Notify all followers that this user is online
-        await self.notify_followers_online(self.user.id)
-        
         await self.accept()
+        
+        # Send current list of online users to newly connected client
+        online_users = await self.get_online_users()
+        await self.send(text_data=json.dumps({
+            'type': 'online_users',
+            'users': online_users
+        }))
+        
+        # Notify all other users that this user came online
+        if self.user.online_status != 'invisible':
+            await self.channel_layer.group_send(
+                self.broadcast_channel,
+                {
+                    'type': 'user_online_status',
+                    'user_id': self.user.id,
+                    'username': self.user.username,
+                    'email': self.user.email,
+                    'is_online': True,
+                    'online_status': self.user.online_status,
+                    'exclude_user': self.user.id  # Don't send to self
+                }
+            )
     
     async def disconnect(self, close_code):
         """Called when WebSocket connection is closed"""
+        if not hasattr(self, 'user') or self.user.is_anonymous:
+            return
+
+        broadcast_channel = getattr(self, 'broadcast_channel', None)
+
         # Update user online status
         await self.update_user_online_status(self.user.id, False)
         
-        # Notify all followers that this user is offline
-        await self.notify_followers_offline(self.user.id)
+        # Notify all other users that this user went offline
+        if broadcast_channel:
+            await self.channel_layer.group_send(
+                broadcast_channel,
+                {
+                    'type': 'user_online_status',
+                    'user_id': self.user.id,
+                    'username': self.user.username,
+                    'is_online': False,
+                    'online_status': self.user.online_status,
+                    'exclude_user': self.user.id  # Don't send to self
+                }
+            )
         
-        if hasattr(self, 'status_channel'):
+        if broadcast_channel:
             await self.channel_layer.group_discard(
-                self.status_channel,
+                broadcast_channel,
                 self.channel_name
             )
     
@@ -735,13 +1010,32 @@ class UserStatusConsumer(AsyncWebsocketConsumer):
         except:
             pass
     
-    async def status_changed(self, event):
-        """Handle status change event"""
-        await self.send(text_data=json.dumps({
-            'type': 'status-changed',
-            'user_id': event['user_id'],
-            'is_online': event['is_online'],
-        }))
+    async def user_online_status(self, event):
+        """Send user status change to connected clients"""
+        # Don't send to the user who's status changed
+        if event.get('exclude_user') != self.user.id:
+            await self.send(text_data=json.dumps({
+                'type': 'user_status_change',
+                'user_id': event['user_id'],
+                'username': event['username'],
+                'email': event.get('email'),
+                'is_online': event['is_online'],
+                'online_status': event.get('online_status', 'available'),
+            }))
+    
+    @database_sync_to_async
+    def get_online_users(self):
+        """Get list of all online users"""
+        online_users = User.objects.filter(is_online=True).exclude(online_status='invisible').exclude(id=self.user.id)
+        return [{
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_online': True,
+            'online_status': user.online_status,
+            'last_seen': user.last_seen.isoformat() if user.last_seen else None,
+            'profile_picture': user.profile_picture.url if user.profile_picture else None
+        } for user in online_users]
     
     @database_sync_to_async
     def update_user_online_status(self, user_id, is_online):
@@ -750,30 +1044,6 @@ class UserStatusConsumer(AsyncWebsocketConsumer):
             user = User.objects.get(id=user_id)
             user.is_online = is_online
             user.save()
-        except User.DoesNotExist:
-            pass
-    
-    @database_sync_to_async
-    def notify_followers_online(self, user_id):
-        """Notify followers that user is online"""
-        try:
-            user = User.objects.get(id=user_id)
-            followers = user.followers.all()
-            for follower in followers:
-                # Send notification to each follower's status channel
-                pass
-        except User.DoesNotExist:
-            pass
-    
-    @database_sync_to_async
-    def notify_followers_offline(self, user_id):
-        """Notify followers that user is offline"""
-        try:
-            user = User.objects.get(id=user_id)
-            followers = user.followers.all()
-            for follower in followers:
-                # Send notification to each follower's status channel
-                pass
         except User.DoesNotExist:
             pass
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import Cookies from 'js-cookie';
+import { getValidAccessToken } from '@/lib/authTokens';
 
 export interface Notification {
   id: number;
@@ -25,11 +25,11 @@ export const useNotifications = () => {
 
   // Fetch initial notifications
   const fetchNotifications = useCallback(async () => {
-    const token = Cookies.get('access_token');
+    const token = await getValidAccessToken();
     if (!token) return;
     
     try {
-      const response = await fetch('http://localhost:8000/api/notifications/', {
+      const response = await fetch('http://localhost:8001/api/notifications/', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -46,11 +46,11 @@ export const useNotifications = () => {
 
   // Fetch unread count
   const fetchUnreadCount = useCallback(async () => {
-    const token = Cookies.get('access_token');
+    const token = await getValidAccessToken();
     if (!token) return;
     
     try {
-      const response = await fetch('http://localhost:8000/api/notifications/unread_count/', {
+      const response = await fetch('http://localhost:8001/api/notifications/unread_count/', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -67,11 +67,11 @@ export const useNotifications = () => {
 
   // Mark notification as read
   const markAsRead = useCallback(async (notificationId: number) => {
-    const token = Cookies.get('access_token');
+    const token = await getValidAccessToken();
     if (!token) return;
     
     try {
-      const response = await fetch(`http://localhost:8000/api/notifications/${notificationId}/mark_as_read/`, {
+      const response = await fetch(`http://localhost:8001/api/notifications/${notificationId}/mark_as_read/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -91,11 +91,11 @@ export const useNotifications = () => {
 
   // Mark all notifications as read
   const markAllAsRead = useCallback(async () => {
-    const token = Cookies.get('access_token');
+    const token = await getValidAccessToken();
     if (!token) return;
     
     try {
-      const response = await fetch('http://localhost:8000/api/notifications/mark_all_as_read/', {
+      const response = await fetch('http://localhost:8001/api/notifications/mark_all_as_read/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -113,60 +113,72 @@ export const useNotifications = () => {
 
   // WebSocket connection
   useEffect(() => {
-    const token = Cookies.get('access_token');
-    if (!user || !token) return;
+    if (!user) return;
 
-    const wsUrl = `ws://localhost:8000/ws/notifications/?token=${token}`;
-    const websocket = new WebSocket(wsUrl);
+    let websocket: WebSocket | null = null;
+    let cancelled = false;
 
-    websocket.onopen = () => {
-      console.log('🔔 Notification WebSocket connected');
-      setIsConnected(true);
-    };
+    const connect = async () => {
+      const token = await getValidAccessToken();
+      if (!token || cancelled) return;
 
-    websocket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('🔔 New notification:', data);
-        
-        if (data.type === 'notification') {
-          const newNotification: Notification = data.notification;
-          setNotifications(prev => [newNotification, ...prev]);
-          if (!newNotification.is_read) {
-            setUnreadCount(prev => prev + 1);
+      const wsUrl = `ws://localhost:8001/ws/notifications/?token=${token}`;
+      websocket = new WebSocket(wsUrl);
+
+      websocket.onopen = () => {
+        console.log('🔔 Notification WebSocket connected');
+        setIsConnected(true);
+      };
+
+      websocket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('🔔 New notification:', data);
+
+          if (data.type === 'notification') {
+            const newNotification: Notification = data.notification;
+            setNotifications(prev => [newNotification, ...prev]);
+            if (!newNotification.is_read) {
+              setUnreadCount(prev => prev + 1);
+            }
+
+            // Show browser notification if permitted
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification('New Notification', {
+                body: newNotification.message,
+                icon: '/favicon.ico',
+              });
+            }
           }
-          
-          // Show browser notification if permitted
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('New Notification', {
-              body: newNotification.message,
-              icon: '/favicon.ico',
-            });
-          }
+        } catch (error) {
+          console.error('Failed to parse notification:', error);
         }
-      } catch (error) {
-        console.error('Failed to parse notification:', error);
-      }
+      };
+
+      websocket.onerror = (error) => {
+        console.error('🔔 Notification WebSocket error:', error);
+        setIsConnected(false);
+      };
+
+      websocket.onclose = () => {
+        console.log('🔔 Notification WebSocket disconnected');
+        setIsConnected(false);
+      };
+
+      setWs(websocket);
     };
 
-    websocket.onerror = (error) => {
-      console.error('🔔 Notification WebSocket error:', error);
-      setIsConnected(false);
-    };
-
-    websocket.onclose = () => {
-      console.log('🔔 Notification WebSocket disconnected');
-      setIsConnected(false);
-    };
-
-    setWs(websocket);
+    void connect();
 
     // Fetch initial data
-    fetchNotifications();
-    fetchUnreadCount();
+    void fetchNotifications();
+    void fetchUnreadCount();
 
     return () => {
-      websocket.close();
+      cancelled = true;
+      if (websocket) {
+        websocket.close();
+      }
     };
   }, [user, fetchNotifications, fetchUnreadCount]);
 

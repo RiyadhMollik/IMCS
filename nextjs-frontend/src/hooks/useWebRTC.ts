@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Cookies from 'js-cookie';
+import api from '@/lib/api';
+import { getValidAccessToken } from '@/lib/authTokens';
 
-const WS_BASE = process.env.NEXT_PUBLIC_WS_BASE || 'ws://localhost:8000/ws';
+const WS_BASE = process.env.NEXT_PUBLIC_WS_BASE || 'ws://localhost:8001/ws';
 
 const rtcConfig = {
   iceServers: [
@@ -27,10 +29,14 @@ export function useWebRTC() {
   const [currentCall, setCurrentCall] = useState<CallData | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const pendingIceCandidates = useRef<RTCIceCandidateInit[]>([]);
+  const cameraVideoTrackRef = useRef<MediaStreamTrack | null>(null);
+  const activeVideoTrackRef = useRef<MediaStreamTrack | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -61,6 +67,8 @@ export function useWebRTC() {
       console.log('  - Audio tracks:', audioTracks.map(t => `${t.label} (enabled: ${t.enabled})`));
 
       setLocalStream(stream);
+      cameraVideoTrackRef.current = stream.getVideoTracks()[0] || null;
+      activeVideoTrackRef.current = stream.getVideoTracks()[0] || null;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
       }
@@ -141,6 +149,50 @@ export function useWebRTC() {
     return pc;
   }, []);
 
+  const replaceOutgoingVideoTrack = useCallback(async (nextTrack: MediaStreamTrack | null) => {
+    const pc = peerConnectionRef.current;
+    if (!pc) {
+      return;
+    }
+
+    const sender = pc.getSenders().find((item) => item.track?.kind === 'video');
+    if (!sender) {
+      return;
+    }
+
+    await sender.replaceTrack(nextTrack);
+  }, []);
+
+  const stopScreenShare = useCallback(async (restorePreview = true) => {
+    if (!isScreenSharing) {
+      return;
+    }
+
+    const cameraTrack = cameraVideoTrackRef.current;
+    try {
+      await replaceOutgoingVideoTrack(cameraTrack || null);
+    } catch (error) {
+      console.error('Failed to restore camera track:', error);
+    }
+
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((track) => track.stop());
+      screenStreamRef.current = null;
+    }
+
+    activeVideoTrackRef.current = cameraTrack || null;
+
+    if (cameraTrack) {
+      cameraTrack.enabled = videoEnabled;
+    }
+
+    if (restorePreview && localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+
+    setIsScreenSharing(false);
+  }, [isScreenSharing, localStream, replaceOutgoingVideoTrack, videoEnabled]);
+
   // Start a call
   const startCall = useCallback(async (recipientUsername: string, callType: 'audio' | 'video') => {
     try {
@@ -151,22 +203,12 @@ export function useWebRTC() {
       const pc = setupPeerConnection(stream);
 
       // Create call via API
-      const token = Cookies.get('access_token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/calls/start/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          receiver_username: recipientUsername,
-          call_type: callType,
-        }),
+      const response = await api.post('/calls/start/', {
+        receiver_username: recipientUsername,
+        call_type: callType,
       });
 
-      if (!response.ok) throw new Error('Failed to start call');
-
-      const callData = await response.json();
+      const callData = response.data;
       
       // Ensure usernames are set (fallback if not in API response)
       const currentUsername = Cookies.get('username');
@@ -188,6 +230,10 @@ export function useWebRTC() {
       console.log('📤 Created offer with video:', callType === 'video');
 
       // Connect to WebSocket
+      const token = await getValidAccessToken();
+      if (!token) {
+        throw new Error('Authentication expired. Please log in again.');
+      }
       const ws = new WebSocket(`${WS_BASE}/call/${callData.room_id}/?token=${token}`);
       wsRef.current = ws;
 
@@ -256,18 +302,13 @@ export function useWebRTC() {
       const pc = setupPeerConnection(stream);
 
       // Accept call via API
-      const token = Cookies.get('access_token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/calls/${incomingCallData.id}/accept/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) throw new Error('Failed to accept call');
+      await api.post(`/calls/${incomingCallData.id}/accept/`);
 
       // Connect to WebSocket
+      const token = await getValidAccessToken();
+      if (!token) {
+        throw new Error('Authentication expired. Please log in again.');
+      }
       const ws = new WebSocket(`${WS_BASE}/call/${incomingCallData.room_id}/?token=${token}`);
       wsRef.current = ws;
 
@@ -340,14 +381,63 @@ export function useWebRTC() {
 
   // Toggle video
   const toggleVideo = useCallback(() => {
-    if (localStream) {
-      const newState = !videoEnabled;
-      localStream.getVideoTracks().forEach(track => {
-        track.enabled = newState;
-      });
-      setVideoEnabled(newState);
+    const currentVideoTrack = activeVideoTrackRef.current;
+    if (!currentVideoTrack) {
+      return;
     }
-  }, [localStream, videoEnabled]);
+
+    const newState = !videoEnabled;
+    currentVideoTrack.enabled = newState;
+    setVideoEnabled(newState);
+  }, [videoEnabled]);
+
+  const toggleScreenShare = useCallback(async () => {
+    if (!isCallActive || !currentCall || currentCall.call_type !== 'video') {
+      return;
+    }
+
+    if (isScreenSharing) {
+      await stopScreenShare();
+      return;
+    }
+
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false,
+      });
+
+      const screenTrack = screenStream.getVideoTracks()[0];
+      if (!screenTrack) {
+        return;
+      }
+
+      await replaceOutgoingVideoTrack(screenTrack);
+      activeVideoTrackRef.current = screenTrack;
+      screenTrack.enabled = true;
+      setVideoEnabled(true);
+
+      screenTrack.onended = () => {
+        stopScreenShare(false).catch((error) => {
+          console.error('Failed stopping screen share after browser end:', error);
+        });
+      };
+
+      screenStreamRef.current = screenStream;
+      setIsScreenSharing(true);
+
+      if (localVideoRef.current) {
+        const previewStream = new MediaStream();
+        previewStream.addTrack(screenTrack);
+        if (localStream) {
+          localStream.getAudioTracks().forEach((track) => previewStream.addTrack(track));
+        }
+        localVideoRef.current.srcObject = previewStream;
+      }
+    } catch (error) {
+      console.error('Failed to start screen sharing:', error);
+    }
+  }, [currentCall, isCallActive, isScreenSharing, localStream, replaceOutgoingVideoTrack, stopScreenShare]);
 
   // End call
   const endCall = useCallback(() => {
@@ -361,6 +451,11 @@ export function useWebRTC() {
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
+    }
+
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((track) => track.stop());
+      screenStreamRef.current = null;
     }
 
     // Stop local stream
@@ -380,6 +475,9 @@ export function useWebRTC() {
     setCallStatus('');
     setAudioEnabled(true);
     setVideoEnabled(true);
+    setIsScreenSharing(false);
+    cameraVideoTrackRef.current = null;
+    activeVideoTrackRef.current = null;
     pendingIceCandidates.current = [];
   }, [localStream]);
 
@@ -398,6 +496,7 @@ export function useWebRTC() {
     currentCall,
     audioEnabled,
     videoEnabled,
+    isScreenSharing,
     localVideoRef,
     remoteVideoRef,
     startCall,
@@ -405,5 +504,6 @@ export function useWebRTC() {
     endCall,
     toggleAudio,
     toggleVideo,
+    toggleScreenShare,
   };
 }

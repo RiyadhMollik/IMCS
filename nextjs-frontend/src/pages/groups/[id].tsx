@@ -52,10 +52,12 @@ export default function GroupChatPage() {
     currentCall,
     audioEnabled,
     videoEnabled,
+    isScreenSharing,
     acceptCall,
     endCall,
     toggleAudio,
     toggleVideo,
+    toggleScreenShare,
   } = useWebRTC();
 
   useEffect(() => {
@@ -115,7 +117,7 @@ export default function GroupChatPage() {
     }
 
     const token = Cookies.get('access_token');
-    const wsUrl = `${process.env.NEXT_PUBLIC_WS_BASE || 'ws://localhost:8000/ws'}/group/${id}/?token=${token}`;
+    const wsUrl = `${process.env.NEXT_PUBLIC_WS_BASE || 'ws://localhost:8001/ws'}/group/${id}/?token=${token}`;
     
     const ws = new WebSocket(wsUrl);
     
@@ -376,8 +378,10 @@ export default function GroupChatPage() {
         remoteVideoRef={remoteVideoRef}
         audioEnabled={audioEnabled}
         videoEnabled={videoEnabled}
+        isScreenSharing={isScreenSharing}
         onToggleAudio={toggleAudio}
         onToggleVideo={toggleVideo}
+        onToggleScreenShare={toggleScreenShare}
         onEndCall={endCall}
       />
 

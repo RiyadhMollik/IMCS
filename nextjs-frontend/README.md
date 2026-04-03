@@ -1,10 +1,11 @@
 # Audio/Video Call App - Next.js Frontend
 
-Modern Next.js frontend for the audio/video calling application with WebRTC support.
+Modern Next.js frontend for the audio/video calling application with WebRTC and mediasoup SFU support.
 
 ## ✨ Features
 
 - 🎥 Video & Audio Calling with WebRTC
+- 🛰️ mediasoup SFU conference routing for group calls
 - 🔐 JWT Authentication
 - 👥 Real-time Online Users
 - 📱 Responsive Design with Tailwind CSS
@@ -44,7 +45,7 @@ src/
 ### Prerequisites
 
 - Node.js 18+ installed
-- Django backend running on http://127.0.0.1:8000
+- Django backend running on http://127.0.0.1:8001
 - npm or yarn package manager
 
 ### Installation
@@ -62,8 +63,9 @@ src/
 3. **Configure environment variables:**
    The `.env.local` file is already configured with defaults:
    ```env
-   NEXT_PUBLIC_API_BASE=http://127.0.0.1:8000/api
-   NEXT_PUBLIC_WS_BASE=ws://127.0.0.1:8000/ws
+   NEXT_PUBLIC_API_BASE=http://127.0.0.1:8001/api
+   NEXT_PUBLIC_WS_BASE=ws://127.0.0.1:8001/ws
+  NEXT_PUBLIC_MEDIASOUP_URL=http://127.0.0.1:4000
    ```
 
 4. **Start the development server:**
@@ -89,11 +91,16 @@ Create or modify `.env.local`:
 
 ```env
 # Backend API URL
-NEXT_PUBLIC_API_BASE=http://127.0.0.1:8000/api
+NEXT_PUBLIC_API_BASE=http://127.0.0.1:8001/api
 
 # WebSocket URL
-NEXT_PUBLIC_WS_BASE=ws://127.0.0.1:8000/ws
+NEXT_PUBLIC_WS_BASE=ws://127.0.0.1:8001/ws
+
+# mediasoup SFU URL
+NEXT_PUBLIC_MEDIASOUP_URL=http://127.0.0.1:4000
 ```
+
+Run the mediasoup service before starting group conference calls.
 
 ### Django Backend
 

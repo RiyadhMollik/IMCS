@@ -99,7 +99,7 @@ export default function StoryViewer({
           <div className="flex items-center space-x-3">
             {story.author.profile_picture ? (
               <img
-                src={`http://localhost:8000${story.author.profile_picture}`}
+                src={`http://localhost:8001${story.author.profile_picture}`}
                 alt={story.author.username}
                 className="w-10 h-10 rounded-full border-2 border-white"
               />

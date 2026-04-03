@@ -1,108 +1,142 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Cookies from 'js-cookie';
 import api from '@/lib/api';
+import { getValidAccessToken } from '@/lib/authTokens';
 import { CallData } from './useWebRTC';
 
-const PRESENCE_WS_URL = process.env.NEXT_PUBLIC_WS_BASE + '/presence/' || 'ws://localhost:8000/ws/presence/';
+const WS_BASE = process.env.NEXT_PUBLIC_WS_BASE || 'ws://localhost:8001/ws';
+const PRESENCE_WS_URL = `${WS_BASE}/presence/`;
 
 export interface OnlineUser {
   id: number;
   username: string;
   is_online: boolean;
 }
-export function usePresence() {
-  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+
+export interface IncomingGroupCallData {
+  conference_id: number;
+  conversation_id?: number;
+  title: string;
+  host_id?: number;
+  host_username: string;
+  call_type: 'audio' | 'video';
+  room_id: string;
+}
+
+export interface CallHistoryItem {
+  id: number;
+  caller: { id: number; username: string };
+  receiver: { id: number; username: string };
+  call_type: 'audio' | 'video';
+  status: string;
+  initiated_at: string;
+  accepted_at?: string;
+  ended_at?: string;
+  duration?: number;
+}
+
+export function usePresence(onCallEnded?: (callData: CallHistoryItem) => void) {
   const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
+  const [incomingGroupCall, setIncomingGroupCall] = useState<IncomingGroupCallData | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const shouldReconnectRef = useRef(true);
 
-  // Load online users
-  const loadOnlineUsers = useCallback(async () => {
-    try {
-      const response = await api.get<OnlineUser[]>('/users/online/');
-      const currentUsername = Cookies.get('username');
-      setOnlineUsers(response.data.filter(user => user.username !== currentUsername));
-    } catch (error) {
-      console.error('Error loading online users:', error);
-    }
-  }, []);
-
   // Setup presence WebSocket
   const setupPresenceWebSocket = useCallback(() => {
-    const token = Cookies.get('access_token');
-    if (!token || !shouldReconnectRef.current) return;
+    if (!shouldReconnectRef.current) return;
 
-    // Clean up existing connection
-    if (wsRef.current) {
-      if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
-        return; // Already connected or connecting
-      }
-    }
+    const connect = async () => {
+      const token = await getValidAccessToken();
+      if (!token || !shouldReconnectRef.current) return;
 
-    const wsUrl = `${PRESENCE_WS_URL}?token=${token}`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    let pingInterval: NodeJS.Timeout;
-
-    const handleOpen = () => {
-      console.log('✅ Presence WebSocket connected');
-      // Keepalive ping
-      pingInterval = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'ping' }));
+      // Clean up existing connection
+      if (wsRef.current) {
+        if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+          return; // Already connected or connecting
         }
-      }, 30000);
-    };
-
-    const handleMessage = (event: MessageEvent) => {
-      const data = JSON.parse(event.data);
-      console.log('📨 Presence message:', data.type);
-
-      switch (data.type) {
-        case 'incoming-call':
-          console.log('🔔 INCOMING CALL!', data);
-          // Map call_id to id for CallData interface
-          const incomingCallData: CallData = {
-            id: data.call_id,
-            room_id: data.room_id,
-            caller_username: data.caller_username,
-            receiver_username: '', // Will be current user
-            call_type: data.call_type,
-            status: 'ringing'
-          };
-          setIncomingCall(incomingCallData);
-          break;
-        case 'call-cancelled':
-          setIncomingCall(null);
-          break;
-        case 'call-ended':
-          setIncomingCall(null);
-          break;
       }
+
+      const wsUrl = `${PRESENCE_WS_URL}?token=${token}`;
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      let pingInterval: NodeJS.Timeout;
+
+      const handleOpen = () => {
+        console.log('✅ Presence WebSocket connected');
+        // Keepalive ping
+        pingInterval = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping' }));
+          }
+        }, 30000);
+      };
+
+      const handleMessage = (event: MessageEvent) => {
+        const data = JSON.parse(event.data);
+        console.log('📨 Presence message:', data.type);
+
+        switch (data.type) {
+          case 'incoming-call':
+            console.log('🔔 INCOMING CALL!', data);
+            // Map call_id to id for CallData interface
+            const incomingCallData: CallData = {
+              id: data.call_id,
+              room_id: data.room_id,
+              caller_username: data.caller_username,
+              receiver_username: '', // Will be current user
+              call_type: data.call_type,
+              status: 'ringing'
+            };
+            setIncomingCall(incomingCallData);
+            break;
+          case 'incoming-group-call':
+            setIncomingGroupCall({
+              conference_id: data.conference_id,
+              conversation_id: data.conversation_id,
+              title: data.title || '',
+              host_id: data.host_id,
+              host_username: data.host_username || '',
+              call_type: data.call_type || 'video',
+              room_id: data.room_id || '',
+            });
+            break;
+          case 'call-cancelled':
+            setIncomingCall(null);
+            break;
+          case 'call-ended':
+            setIncomingCall(null);
+            // Notify about call end with call data
+            if (data.call_data && onCallEnded) {
+              onCallEnded(data.call_data);
+            }
+            break;
+        }
+      };
+
+      const handleError = () => {
+        // Silently handle errors - they're expected during React StrictMode
+      };
+
+      const handleClose = () => {
+        if (pingInterval) clearInterval(pingInterval);
+
+        // Only reconnect if we should (not during cleanup)
+        if (shouldReconnectRef.current) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            setupPresenceWebSocket();
+          }, 3000);
+        }
+      };
+
+      ws.addEventListener('open', handleOpen);
+      ws.addEventListener('message', handleMessage);
+      ws.addEventListener('error', handleError);
+      ws.addEventListener('close', handleClose);
     };
 
-    const handleError = () => {
-      // Silently handle errors - they're expected during React StrictMode
-    };
-
-    const handleClose = () => {
-      if (pingInterval) clearInterval(pingInterval);
-      
-      // Only reconnect if we should (not during cleanup)
-      if (shouldReconnectRef.current) {
-        reconnectTimeoutRef.current = setTimeout(() => {
-          setupPresenceWebSocket();
-        }, 3000);
-      }
-    };
-
-    ws.addEventListener('open', handleOpen);
-    ws.addEventListener('message', handleMessage);
-    ws.addEventListener('error', handleError);
-    ws.addEventListener('close', handleClose);
-  }, []);
+    void connect();
+  }, [onCallEnded]);
 
   const rejectCall = useCallback(async (callId: string) => {
     try {
@@ -118,18 +152,17 @@ export function usePresence() {
     setIncomingCall(null);
   }, []);
 
+  const clearIncomingGroupCall = useCallback(() => {
+    setIncomingGroupCall(null);
+  }, []);
+
   useEffect(() => {
     shouldReconnectRef.current = true;
-    loadOnlineUsers();
     setupPresenceWebSocket();
-
-    // Refresh online users periodically
-    const interval = setInterval(loadOnlineUsers, 5000);
 
     return () => {
       // Cleanup: prevent reconnection
       shouldReconnectRef.current = false;
-      clearInterval(interval);
       
       // Clear any pending reconnection timeout
       if (reconnectTimeoutRef.current) {
@@ -146,13 +179,13 @@ export function usePresence() {
         wsRef.current = null;
       }
     };
-  }, [loadOnlineUsers, setupPresenceWebSocket]);
+  }, [setupPresenceWebSocket]);
 
   return {
-    onlineUsers,
     incomingCall,
+    incomingGroupCall,
     rejectCall,
     clearIncomingCall,
-    refreshOnlineUsers: loadOnlineUsers,
+    clearIncomingGroupCall,
   };
 }

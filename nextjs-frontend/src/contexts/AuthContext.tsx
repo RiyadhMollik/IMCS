@@ -7,6 +7,14 @@ interface User {
   id?: number;
   username: string;
   email?: string;
+  role?: string;
+  is_online?: boolean;
+  online_status?: 'available' | 'dnd' | 'invisible' | 'offline';
+  last_seen?: string;
+  profile_picture?: string;
+  can_make_voice_calls?: boolean;
+  can_make_video_calls?: boolean;
+  can_send_messages?: boolean;
 }
 
 interface AuthContextType {
@@ -25,17 +33,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  const readStoredToken = () => {
+    const cookieToken = Cookies.get('access_token');
+    if (cookieToken) return cookieToken;
+    if (typeof window === 'undefined') return undefined;
+    return localStorage.getItem('access_token') || undefined;
+  };
+
   useEffect(() => {
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
-    const token = Cookies.get('access_token');
-    const username = Cookies.get('username');
-    const userId = Cookies.get('user_id');
+    const token = readStoredToken();
     
-    if (token && username) {
-      setUser({ id: userId ? parseInt(userId) : undefined, username });
+    if (token) {
+      try {
+        Cookies.set('access_token', token, { expires: 1, path: '/' });
+        const response = await api.get('/users/me/');
+        setUser(response.data);
+      } catch (error) {
+        Cookies.remove('access_token');
+        Cookies.remove('refresh_token');
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+        }
+        setUser(null);
+      }
     } else {
       setUser(null);
     }
@@ -51,17 +76,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { access, refresh, user } = response.data;
       
-      // Store tokens, username, and user ID
-      Cookies.set('access_token', access, { expires: 1 });
-      Cookies.set('refresh_token', refresh, { expires: 7 });
-      Cookies.set('username', username, { expires: 7 });
-      if (user?.id) {
-        Cookies.set('user_id', user.id.toString(), { expires: 7 });
+      Cookies.set('access_token', access, { expires: 1, path: '/' });
+      Cookies.set('refresh_token', refresh, { expires: 7, path: '/' });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('access_token', access);
+        localStorage.setItem('refresh_token', refresh);
       }
 
-      setUser({ id: user?.id, username });
+      setUser(user);
       
-      router.push('/social');
+      router.push('/dashboard');
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Login failed');
     }
@@ -75,7 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
       });
 
-      // Auto-login after registration
       await login(username, password);
     } catch (error: any) {
       const errorMsg = error.response?.data?.username?.[0] ||
@@ -87,10 +110,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    // Clear tokens and user
-    Cookies.remove('access_token');
-    Cookies.remove('refresh_token');
-    Cookies.remove('username');
+    // Best-effort status update before token removal.
+    api.post('/users/set_offline/').catch(() => undefined);
+
+    Cookies.remove('access_token', { path: '/' });
+    Cookies.remove('refresh_token', { path: '/' });
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+    }
+
+    // Clear temporary client-side data.
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (error) {
+      console.error('Failed clearing browser storage on logout:', error);
+    }
+
     setUser(null);
     router.push('/login');
   };

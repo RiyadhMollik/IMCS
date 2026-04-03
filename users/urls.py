@@ -11,9 +11,5 @@ urlpatterns = [
     path('online/', UserViewSet.as_view({'get': 'online_users'}), name='online-users'),
     path('set-online/', UserViewSet.as_view({'post': 'set_online'}), name='set-online'),
     path('set-offline/', UserViewSet.as_view({'post': 'set_offline'}), name='set-offline'),
-    path('<int:pk>/follow/', UserViewSet.as_view({'post': 'follow'}), name='user-follow'),
-    path('<int:pk>/unfollow/', UserViewSet.as_view({'post': 'unfollow'}), name='user-unfollow'),
-    path('<int:pk>/followers/', UserViewSet.as_view({'get': 'followers'}), name='user-followers'),
-    path('<int:pk>/following/', UserViewSet.as_view({'get': 'following'}), name='user-following'),
     path('', include(router.urls)),
 ]

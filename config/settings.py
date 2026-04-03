@@ -33,8 +33,10 @@ INSTALLED_APPS = [
     'channels',
     'corsheaders',
     
-    # Local apps
+    # Local apps - IMCS
     'users',
+    'messaging',
+    'files',
     'calls',
 ]
 
@@ -70,31 +72,51 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
-# Database - MySQL
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DB_NAME', default='audiocall_db'),
-        'USER': config('DB_USER', default='root'),
-        'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='3306'),
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'charset': 'utf8mb4',
-        },
+# Database Configuration
+DB_ENGINE = config('DB_ENGINE', default='sqlite')
+
+if DB_ENGINE == 'sqlite':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    # MySQL Configuration
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': config('DB_NAME', default='audiocall_db'),
+            'USER': config('DB_USER', default='root'),
+            'PASSWORD': config('DB_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='3306'),
+            'OPTIONS': {
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+                'charset': 'utf8mb4',
+            },
+        }
+    }
 
 # Redis & Channels Configuration
+# For development, using InMemoryChannelLayer (no Redis required)
+# For production, switch to RedisChannelLayer
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [(config('REDIS_HOST', default='127.0.0.1'), config('REDIS_PORT', default=6379, cast=int))],
-        },
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
     },
 }
+
+# Production Redis configuration (uncomment when Redis is available):
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [(config('REDIS_HOST', default='127.0.0.1'), config('REDIS_PORT', default=6379, cast=int))],
+#         },
+#     },
+# }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -159,7 +181,7 @@ else:
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = config(
         'CORS_ALLOWED_ORIGINS',
-        default='http://localhost:3000,http://localhost:8080,http://127.0.0.1:8000,https://gcn66pwt-3000.inc1.devtunnels.ms'
+        default='http://localhost:3000,http://localhost:8080,http://127.0.0.1:8001,https://gcn66pwt-3000.inc1.devtunnels.ms'
     ).split(',')
 
 CORS_ALLOW_CREDENTIALS = True

@@ -1,0 +1,17 @@
+{
+  "name": "sociala-mediasoup-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "NODE_ENV=production node src/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "mediasoup": "^3.16.7",
+    "socket.io": "^4.8.3"
+  }
+}

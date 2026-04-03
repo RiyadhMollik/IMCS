@@ -26,3 +26,18 @@ body {
 .animate-bounce-slow {
   animation: bounce-slow 1s ease-in-out infinite;
 }
+
+@keyframes toast-slide-in {
+  0% {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-toast-in {
+  animation: toast-slide-in 220ms ease-out;
+}

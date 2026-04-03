@@ -7,8 +7,10 @@ interface VideoCallModalProps {
   remoteVideoRef: React.RefObject<HTMLVideoElement>;
   audioEnabled: boolean;
   videoEnabled: boolean;
+  isScreenSharing?: boolean;
   onToggleAudio: () => void;
   onToggleVideo: () => void;
+  onToggleScreenShare?: () => void;
   onEndCall: () => void;
 }
 
@@ -21,8 +23,10 @@ export default function VideoCallModal({
   remoteVideoRef,
   audioEnabled,
   videoEnabled,
+  isScreenSharing = false,
   onToggleAudio,
   onToggleVideo,
+  onToggleScreenShare,
   onEndCall,
 }: VideoCallModalProps) {
   if (!isActive) return null;
@@ -104,6 +108,20 @@ export default function VideoCallModal({
               title={videoEnabled ? 'Stop Video' : 'Start Video'}
             >
               {videoEnabled ? '📹' : '📷'}
+            </button>
+          )}
+
+          {isVideoCall && onToggleScreenShare && (
+            <button
+              onClick={onToggleScreenShare}
+              className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all ${
+                isScreenSharing
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+              title={isScreenSharing ? 'Stop Screen Share' : 'Start Screen Share'}
+            >
+              {isScreenSharing ? '🖥️' : '🪟'}
             </button>
           )}
 

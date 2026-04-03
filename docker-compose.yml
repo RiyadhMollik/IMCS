@@ -1,0 +1,54 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: sociala_db
+      MYSQL_USER: sociala_user
+      MYSQL_PASSWORD: sociala_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: .
+    environment:
+      DEBUG: "1"
+      SECRET_KEY: "change-me-in-production"
+      DB_ENGINE: "mysql"
+      DB_NAME: "sociala_db"
+      DB_USER: "sociala_user"
+      DB_PASSWORD: "sociala_password"
+      DB_HOST: "db"
+      DB_PORT: "3306"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+    volumes:
+      - .:/app
+    command: >
+      sh -c "until mysqladmin ping --ssl=0 -h\"$$DB_HOST\" -u\"$$DB_USER\" -p\"$$DB_PASSWORD\" --silent; do echo 'waiting for db'; sleep 2; done; python manage.py migrate && daphne -b 0.0.0.0 -p 8001 config.asgi:application"
+
+  frontend:
+    build: ./nextjs-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:8001/api"
+      NEXT_PUBLIC_WS_BASE: "ws://localhost:8001/ws"
+      CHOKIDAR_USEPOLLING: "true"
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./nextjs-frontend:/app
+
+volumes:
+  mysql_data:

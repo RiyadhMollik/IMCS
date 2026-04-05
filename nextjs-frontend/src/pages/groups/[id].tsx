@@ -203,8 +203,8 @@ export default function GroupChatPage() {
 
   if (loading || !group) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-gray-600 text-2xl">Loading...</div>
+      <div className="secure-screen flex items-center justify-center">
+        <div className="text-slate-300 text-2xl">Loading...</div>
       </div>
     );
   }
@@ -222,36 +222,36 @@ export default function GroupChatPage() {
     : 'Call';
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="secure-screen">
       {/* Header */}
-      <header className="bg-white shadow-md sticky top-0 z-10">
+      <header className="secure-nav sticky top-0 z-10">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-bold text-blue-600">JVAI Community</h1>
+              <h1 className="text-2xl font-bold secure-title">IMCS</h1>
               
               <nav className="hidden md:flex space-x-4">
                 <button
                   onClick={() => router.push('/social')}
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 font-medium"
+                  className="text-slate-400 hover:text-cyan-200 px-3 py-2 rounded-lg font-medium transition"
                 >
                   Home
                 </button>
                 <button
                   onClick={() => router.push('/dashboard')}
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 font-medium"
+                  className="text-slate-400 hover:text-cyan-200 px-3 py-2 rounded-lg font-medium transition"
                 >
                   Calls
                 </button>
                 <button
                   onClick={() => router.push('/groups')}
-                  className="text-blue-600 border-b-2 border-blue-600 px-3 py-2 font-medium"
+                  className="text-cyan-200 bg-cyan-500/15 border border-cyan-300/25 px-3 py-2 rounded-lg font-medium"
                 >
                   Groups
                 </button>
                 <button
                   onClick={() => router.push('/messages')}
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 font-medium"
+                  className="text-slate-400 hover:text-cyan-200 px-3 py-2 rounded-lg font-medium transition"
                 >
                   Messages
                 </button>
@@ -260,14 +260,14 @@ export default function GroupChatPage() {
 
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                <div className="w-10 h-10 bg-cyan-600/70 rounded-full flex items-center justify-center text-white font-bold">
                   {user.username.charAt(0).toUpperCase()}
                 </div>
-                <span className="font-medium text-gray-800 hidden sm:block">{user.username}</span>
+                <span className="font-medium text-slate-200 hidden sm:block">{user.username}</span>
               </div>
               <button
                 onClick={logout}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium transition"
+                className="secure-btn-secondary px-4 py-2"
               >
                 Logout
               </button>
@@ -278,13 +278,13 @@ export default function GroupChatPage() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        <div className="bg-white rounded-lg shadow-md overflow-hidden" style={{ height: 'calc(100vh - 160px)' }}>
+        <div className="secure-panel overflow-hidden" style={{ height: 'calc(100vh - 160px)' }}>
           <div className="flex flex-col h-full">
             {/* Group Header */}
-            <div className="p-4 border-b border-gray-200">
+            <div className="p-4 border-b border-cyan-200/15">
               <button
                 onClick={() => router.push('/groups')}
-                className="text-blue-600 hover:text-blue-700 mb-3 flex items-center space-x-2"
+                className="text-cyan-300 hover:text-cyan-100 mb-3 flex items-center space-x-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -295,23 +295,23 @@ export default function GroupChatPage() {
                 {group.image ? (
                   <img src={group.image} alt={group.name} className="w-16 h-16 rounded-full object-cover" />
                 ) : (
-                  <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                  <div className="w-16 h-16 bg-cyan-600/70 rounded-full flex items-center justify-center text-white text-2xl font-bold">
                     👥
                   </div>
                 )}
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">{group.name}</h2>
-                  <p className="text-sm text-gray-600">{group.members_count} members</p>
+                  <h2 className="text-2xl font-bold text-slate-100">{group.name}</h2>
+                  <p className="text-sm text-slate-400">{group.members_count} members</p>
                 </div>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-[#071225] to-[#0a162a]">
               {loadingMessages ? (
-                <div className="text-center text-gray-500">Loading messages...</div>
+                <div className="text-center text-slate-400">Loading messages...</div>
               ) : messages.length === 0 ? (
-                <div className="text-center text-gray-500">No messages yet. Start the conversation!</div>
+                <div className="text-center text-slate-400">No messages yet. Start the conversation!</div>
               ) : (
                 messages.map((message) => {
                   const isOwn = message.sender?.username === user?.username;
@@ -319,20 +319,20 @@ export default function GroupChatPage() {
                     <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-2' : 'order-1'}`}>
                         {!isOwn && (
-                          <p className="text-xs font-semibold text-gray-700 mb-1 ml-2">
+                          <p className="text-xs font-semibold text-slate-300 mb-1 ml-2">
                             {message.sender?.username || 'Unknown'}
                           </p>
                         )}
                         <div
                           className={`px-4 py-2 rounded-lg ${
                             isOwn
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-white text-gray-800 border border-gray-200'
+                              ? 'bg-cyan-600 text-white'
+                              : 'bg-[#0f1f37] text-slate-100 border border-cyan-200/20'
                           }`}
                         >
                           <p>{message.content}</p>
                         </div>
-                        <p className={`text-xs text-gray-500 mt-1 ${isOwn ? 'text-right' : 'text-left'} ml-2`}>
+                        <p className={`text-xs text-slate-500 mt-1 ${isOwn ? 'text-right' : 'text-left'} ml-2`}>
                           {formatDate(message.created_at)}
                         </p>
                       </div>
@@ -344,19 +344,19 @@ export default function GroupChatPage() {
             </div>
 
             {/* Message Input */}
-            <form onSubmit={sendMessage} className="p-4 border-t border-gray-200 bg-white">
+            <form onSubmit={sendMessage} className="p-4 border-t border-cyan-200/15 bg-[#09162a]">
               <div className="flex items-center space-x-3">
                 <input
                   type="text"
                   value={messageContent}
                   onChange={(e) => setMessageContent(e.target.value)}
                   placeholder="Type a message..."
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 secure-input rounded-full"
                 />
                 <button
                   type="submit"
                   disabled={!messageContent.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white p-3 rounded-full transition"
+                  className="secure-btn rounded-full p-3"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

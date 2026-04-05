@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -9,9 +11,99 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  @apply bg-[#05070d] text-slate-100;
+  background-image:
+    radial-gradient(circle at 18% 20%, rgba(56, 189, 248, 0.14), transparent 44%),
+    radial-gradient(circle at 82% 4%, rgba(16, 185, 129, 0.12), transparent 40%),
+    radial-gradient(circle at 70% 84%, rgba(14, 165, 233, 0.08), transparent 44%),
+    linear-gradient(180deg, #05070d 0%, #0a1120 46%, #05070d 100%);
+  min-height: 100vh;
+}
+
+@layer base {
+  :root {
+    --secure-bg: #05070d;
+    --secure-surface: rgba(11, 19, 35, 0.78);
+    --secure-surface-strong: rgba(15, 26, 49, 0.86);
+    --secure-border: rgba(56, 189, 248, 0.28);
+    --secure-text: #dbeafe;
+    --secure-muted: #94a3b8;
+    --secure-accent: #22d3ee;
+    --secure-accent-strong: #14b8a6;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+}
+
+@layer components {
+  .secure-screen {
+    @apply min-h-screen text-slate-100;
+  }
+
+  .secure-nav {
+    @apply border-b border-cyan-400/20 bg-[#070d19]/85 backdrop-blur-xl;
+  }
+
+  .secure-panel {
+    @apply rounded-2xl border border-cyan-300/20 bg-[#0a1427]/70 shadow-[0_8px_30px_rgba(8,47,73,0.3)] backdrop-blur-sm;
+  }
+
+  .secure-panel-soft {
+    @apply rounded-xl border border-cyan-200/10 bg-[#0b172b]/50 backdrop-blur-sm;
+  }
+
+  .secure-title {
+    @apply text-cyan-100;
+    text-shadow: 0 0 22px rgba(34, 211, 238, 0.2);
+  }
+
+  .secure-subtitle {
+    @apply text-sm text-slate-400;
+  }
+
+  .secure-input {
+    @apply w-full rounded-xl border border-cyan-300/25 bg-[#081224]/90 px-4 py-3 text-slate-100 placeholder:text-slate-500 outline-none transition duration-200 focus:border-cyan-300/70 focus:ring-2 focus:ring-cyan-400/25;
+  }
+
+  .secure-select {
+    @apply w-full rounded-xl border border-cyan-300/25 bg-[#081224]/90 px-4 py-3 text-slate-100 outline-none transition duration-200 focus:border-cyan-300/70 focus:ring-2 focus:ring-cyan-400/25;
+  }
+
+  .secure-btn {
+    @apply inline-flex items-center justify-center rounded-xl border border-cyan-300/40 bg-gradient-to-r from-cyan-500/90 to-teal-500/90 px-4 py-2 font-semibold text-slate-950 transition duration-200 hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(6,182,212,0.3)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100;
+  }
+
+  .secure-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border border-cyan-300/30 bg-cyan-500/10 px-4 py-2 font-medium text-cyan-100 transition duration-200 hover:bg-cyan-400/20;
+  }
+
+  .secure-badge {
+    @apply inline-flex items-center rounded-full border border-emerald-300/35 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-emerald-200;
+  }
+
+  .secure-grid-bg {
+    background-image:
+      linear-gradient(rgba(14, 165, 233, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(14, 165, 233, 0.08) 1px, transparent 1px);
+    background-size: 34px 34px;
+  }
 }
 
 @keyframes bounce-slow {

@@ -2666,8 +2666,8 @@ export default function MessagesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100">
-        <div className="text-slate-600 text-2xl font-semibold tracking-tight">Loading...</div>
+      <div className="secure-screen flex items-center justify-center">
+        <div className="text-slate-300 text-2xl font-semibold tracking-tight">Loading...</div>
       </div>
     );
   }
@@ -2685,88 +2685,96 @@ export default function MessagesPage() {
     : 'Call';
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#f8fafc_0%,_#eef2ff_45%,_#e2e8f0_100%)]">
-      {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-black tracking-tight text-sky-700">IMCS</h1>
-              
-              <nav className="hidden md:flex space-x-4">
+    <div className="secure-screen bg-[#030818]">
+      <main className="h-screen p-0">
+        <div className="h-full border border-cyan-900/30 bg-[#02071a] overflow-hidden">
+          <div className="flex h-full">
+            <aside className="w-[58px] border-r border-cyan-900/40 bg-[#020b21] flex flex-col items-center justify-between py-3">
+              <div className="w-full flex flex-col items-center gap-3">
+                <div className="w-9 h-9 rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-200 flex items-center justify-center text-[11px] font-semibold">
+                  {user.username.slice(0, 2).toUpperCase()}
+                </div>
                 <button
-                  onClick={() => router.push('/dashboard')}
-                  className="text-slate-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2 rounded-lg font-medium transition"
+                  onClick={() => router.push('/messages')}
+                  className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-100 flex items-center justify-center"
+                  title="Chats"
                 >
-                  Dashboard
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
                 </button>
                 <button
                   onClick={() => router.push('/calls')}
-                  className="text-slate-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2 rounded-lg font-medium transition"
+                  className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-slate-300 hover:text-cyan-100 hover:bg-cyan-500/20 transition flex items-center justify-center"
+                  title="Calls"
                 >
-                  Calls
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
                 </button>
                 <button
                   onClick={() => router.push('/contacts')}
-                  className="text-slate-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2 rounded-lg font-medium transition"
+                  className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-slate-300 hover:text-cyan-100 hover:bg-cyan-500/20 transition flex items-center justify-center"
+                  title="Contacts"
                 >
-                  Contacts
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </button>
+                <NotificationBell />
+              </div>
+              <div className="w-full flex flex-col items-center gap-2">
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-slate-300 hover:text-cyan-100 hover:bg-cyan-500/20 transition flex items-center justify-center"
+                  title="Dashboard"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M9 21V10m6 11V10M5 10l7-7 7 7" />
+                  </svg>
                 </button>
                 <button
-                  onClick={() => router.push('/messages')}
-                  className="text-sky-700 bg-sky-100/80 px-3 py-2 rounded-lg font-semibold"
+                  onClick={logout}
+                  className="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-400/30 text-rose-200 hover:bg-rose-500/25 transition flex items-center justify-center"
+                  title="Logout"
                 >
-                  Messages
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+                  </svg>
                 </button>
-              </nav>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <NotificationBell />
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
-                  {user.username.charAt(0).toUpperCase()}
-                </div>
-                <span className="font-medium text-slate-800 hidden sm:block">{user.username}</span>
               </div>
-              <button
-                onClick={logout}
-                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg font-medium transition shadow-sm"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+            </aside>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white/95 rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/70 overflow-visible" style={{ height: 'calc(100vh - 160px)' }}>
-          <div className="flex h-full">
             {/* Users List */}
-            <div className="w-[34%] min-w-[300px] border-r border-slate-200/80 overflow-y-auto bg-slate-50/70">
-              <div className="p-4 border-b border-slate-200/80 bg-white/80 backdrop-blur-sm">
+            <div className="w-[290px] min-w-[270px] border-r border-cyan-900/40 overflow-y-auto bg-[#03102a]">
+              <div className="p-4 border-b border-cyan-200/15 bg-[#0a172d]/80 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold tracking-tight text-slate-800">Messages</h2>
+                    <h2 className="text-lg font-bold tracking-tight text-slate-100">Messages</h2>
                     {totalUnreadMessages > 0 && (
-                      <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-700 min-w-[22px]">
+                      <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-500/20 border border-rose-300/30 text-rose-200 min-w-[22px]">
                         {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
                       </span>
                     )}
                   </div>
                   <button
                     onClick={() => setShowCreateGroupModal(true)}
-                    className="text-xs bg-sky-100 text-sky-700 px-3 py-1.5 rounded-lg hover:bg-sky-200 font-medium"
+                    className="text-xs bg-cyan-500/20 text-cyan-100 px-3 py-1.5 rounded-lg hover:bg-cyan-500/30 font-medium border border-cyan-300/25 transition"
                   >
                     Create Group
                   </button>
                 </div>
+                <div className="mt-3">
+                  <input
+                    type="text"
+                    placeholder="Search contacts..."
+                    className="w-full h-9 rounded-xl border border-cyan-600/25 bg-[#091a38] px-3 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                  />
+                </div>
                 <div className="flex items-center justify-between mt-2">
                   <button
                     onClick={() => setShowHiddenChats((prev) => !prev)}
-                    className="text-xs text-slate-500 hover:text-slate-700"
+                    className="text-xs text-slate-400 hover:text-slate-200"
                   >
                     {showHiddenChats ? 'Hide hidden chats' : 'Show hidden chats'}
                   </button>
@@ -2783,12 +2791,12 @@ export default function MessagesPage() {
                   </p>
                 )}
               </div>
-              <div className="border-b border-slate-200/70">
-                <div className="px-4 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 font-semibold">
+              <div className="border-b border-cyan-200/15">
+                <div className="px-4 py-2 text-xs uppercase tracking-[0.12em] text-slate-400 font-semibold">
                   Direct Messages
                 </div>
                 {sortedUsersWithOnlineStatus.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500">
+                  <div className="p-4 text-center text-slate-500">
                     No users found
                   </div>
                 ) : (
@@ -2802,23 +2810,23 @@ export default function MessagesPage() {
                     key={u.id}
                     onClick={() => openDirectConversation(u)}
                     className={`w-full p-4 flex items-center space-x-3 transition rounded-xl mx-2 my-1 border ${
-                      selectedUser?.id === u.id ? 'bg-sky-50 border-sky-200 shadow-sm' : 'border-transparent hover:bg-white hover:border-slate-200'
+                      selectedUser?.id === u.id ? 'bg-cyan-500/15 border-cyan-300/35 shadow-sm' : 'border-transparent hover:bg-cyan-500/8 hover:border-cyan-300/20'
                     }`}
                   >
                     <div className="relative">
-                      <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                      <div className="w-12 h-12 bg-cyan-600/70 rounded-full flex items-center justify-center text-white font-bold">
                         {u.username.charAt(0).toUpperCase()}
                       </div>
                       {u.is_online && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#081224] rounded-full"></div>
                       )}
                     </div>
                     <div className="flex-1 text-left">
-                      <h3 className="font-semibold text-gray-800">
+                      <h3 className="font-semibold text-slate-100">
                         {conversation?.is_pinned ? '📌 ' : ''}
                         {u.username}
                       </h3>
-                      <p className="text-sm text-gray-500">{u.is_online ? 'Online' : formatLastSeen(u.last_seen)}</p>
+                      <p className="text-sm text-slate-400">{u.is_online ? 'Online' : formatLastSeen(u.last_seen)}</p>
                     </div>
                   </button>
                     );
@@ -2828,11 +2836,11 @@ export default function MessagesPage() {
               </div>
 
               <div>
-                <div className="px-4 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 font-semibold">
+                <div className="px-4 py-2 text-xs uppercase tracking-[0.12em] text-slate-400 font-semibold">
                   Groups
                 </div>
                 {visibleGroupConversations.length === 0 ? (
-                  <div className="p-4 text-sm text-gray-500">
+                  <div className="p-4 text-sm text-slate-500">
                     No groups yet. Create one to start group chat and calls.
                   </div>
                 ) : (
@@ -2843,18 +2851,18 @@ export default function MessagesPage() {
                         key={group.id}
                         onClick={() => openGroupConversation(group)}
                         className={`w-full p-4 flex items-center space-x-3 transition rounded-xl mx-2 my-1 border ${
-                          selectedGroupConversationId === group.id ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'border-transparent hover:bg-white hover:border-slate-200'
+                          selectedGroupConversationId === group.id ? 'bg-cyan-500/15 border-cyan-300/35 shadow-sm' : 'border-transparent hover:bg-cyan-500/8 hover:border-cyan-300/20'
                         }`}
                       >
-                        <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
+                        <div className="w-12 h-12 bg-sky-600/70 rounded-full flex items-center justify-center text-white font-bold">
                           {(group.name || 'G').charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 text-left">
-                          <h3 className="font-semibold text-gray-800">
+                          <h3 className="font-semibold text-slate-100">
                             {group.is_pinned ? '📌 ' : ''}
                             {group.name || `Group ${group.id}`}
                           </h3>
-                          <p className="text-sm text-gray-500">{memberCount} members</p>
+                          <p className="text-sm text-slate-400">{memberCount} members</p>
                         </div>
                       </button>
                     );
@@ -2863,24 +2871,24 @@ export default function MessagesPage() {
               </div>
 
               {showHiddenChats && (hiddenUsers.length > 0 || hiddenGroupConversations.length > 0) && (
-                <div className="border-t border-gray-100">
-                  <div className="px-4 py-2 text-xs uppercase tracking-wide text-gray-500 font-semibold">
+                <div className="border-t border-cyan-900/30">
+                  <div className="px-4 py-2 text-xs uppercase tracking-wide text-slate-500 font-semibold">
                     Hidden Chats
                   </div>
                   {hiddenUsers.map((u) => (
                     <button
                       key={`hidden-${u.id}`}
                       onClick={() => openDirectConversation(u)}
-                      className={`w-full p-4 flex items-center space-x-3 hover:bg-gray-50 transition ${
-                        selectedUser?.id === u.id ? 'bg-blue-50' : ''
+                      className={`w-full p-4 flex items-center space-x-3 hover:bg-cyan-500/10 transition ${
+                        selectedUser?.id === u.id ? 'bg-cyan-500/15' : ''
                       }`}
                     >
-                      <div className="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center text-white font-bold">
+                      <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center text-white font-bold">
                         {u.username.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 text-left">
-                        <h3 className="font-semibold text-gray-800">🙈 {u.username}</h3>
-                        <p className="text-sm text-gray-500">Hidden</p>
+                        <h3 className="font-semibold text-slate-200">🙈 {u.username}</h3>
+                        <p className="text-sm text-slate-500">Hidden</p>
                       </div>
                     </button>
                   ))}
@@ -2888,16 +2896,16 @@ export default function MessagesPage() {
                     <button
                       key={`hidden-group-${group.id}`}
                       onClick={() => openGroupConversation(group)}
-                      className={`w-full p-4 flex items-center space-x-3 hover:bg-gray-50 transition ${
-                        selectedGroupConversationId === group.id ? 'bg-indigo-50' : ''
+                      className={`w-full p-4 flex items-center space-x-3 hover:bg-cyan-500/10 transition ${
+                        selectedGroupConversationId === group.id ? 'bg-cyan-500/15' : ''
                       }`}
                     >
-                      <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">
+                      <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center text-white font-bold">
                         {(group.name || 'G').charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 text-left">
-                        <h3 className="font-semibold text-gray-800">🙈 {group.name || `Group ${group.id}`}</h3>
-                        <p className="text-sm text-gray-500">Hidden group</p>
+                        <h3 className="font-semibold text-slate-200">🙈 {group.name || `Group ${group.id}`}</h3>
+                        <p className="text-sm text-slate-500">Hidden group</p>
                       </div>
                     </button>
                   ))}
@@ -2906,21 +2914,21 @@ export default function MessagesPage() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col bg-gradient-to-b from-slate-50/40 to-white">
+            <div className="flex-1 flex flex-col bg-[#010918]">
               {selectedUserWithStatus || selectedGroupConversationId ? (
                 <>
                   {/* Chat Header */}
-                  <div className="p-4 border-b border-slate-200/80 bg-white/90 backdrop-blur-sm flex items-center justify-between">
+                  <div className="p-4 border-b border-cyan-200/15 bg-[#0b1930]/80 backdrop-blur-sm flex items-center justify-between">
                     {selectedGroupConversationId ? (
                       <div className="flex items-center justify-between w-full">
                         <div>
-                          <h3 className="font-semibold text-gray-800">{selectedGroupName || 'Group Chat'}</h3>
-                          <p className="text-sm text-gray-500">Group conversation</p>
+                          <h3 className="font-semibold text-slate-100">{selectedGroupName || 'Group Chat'}</h3>
+                          <p className="text-sm text-slate-400">Group conversation</p>
                         </div>
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={toggleConversationPin}
-                            className="p-2 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded"
+                            className="p-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 rounded"
                             title="Pin or unpin chat"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2929,7 +2937,7 @@ export default function MessagesPage() {
                           </button>
                           <button
                             onClick={toggleConversationHidden}
-                            className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded"
+                            className="p-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-slate-200 rounded"
                             title={selectedConversationMeta?.is_hidden ? 'Unhide chat' : 'Hide chat'}
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2938,7 +2946,7 @@ export default function MessagesPage() {
                           </button>
                           <button
                             onClick={toggleConversationLock}
-                            className="p-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded"
+                            className="p-2 bg-sky-500/15 hover:bg-sky-500/25 text-sky-200 rounded"
                             title={isConversationLocked ? 'Unlock chat' : 'Lock chat'}
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2947,7 +2955,7 @@ export default function MessagesPage() {
                           </button>
                           <button
                             onClick={() => openGroupCallModal('audio')}
-                            className="p-2 bg-green-100 hover:bg-green-200 text-green-700 rounded"
+                            className="p-2 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 rounded"
                             title="Start audio group call"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2956,7 +2964,7 @@ export default function MessagesPage() {
                           </button>
                           <button
                             onClick={() => openGroupCallModal('video')}
-                            className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded"
+                            className="p-2 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 rounded"
                             title="Start video group call"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2966,7 +2974,7 @@ export default function MessagesPage() {
                           <div className="relative">
                             <button
                               onClick={() => setShowGroupActionsMenu((prev) => !prev)}
-                              className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded"
+                              className="p-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-slate-200 rounded"
                               title="Group actions"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2975,10 +2983,10 @@ export default function MessagesPage() {
                             </button>
 
                             {showGroupActionsMenu && (
-                              <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-30 py-1">
+                              <div className="absolute right-0 mt-2 w-52 bg-[#0b1b34] border border-cyan-200/20 rounded-lg shadow-lg z-30 py-1">
                                 <button
                                   onClick={openRenameGroupModal}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                  className="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-cyan-500/10"
                                 >
                                   Change Group Name
                                 </button>
@@ -2987,7 +2995,7 @@ export default function MessagesPage() {
                                     setShowGroupActionsMenu(false);
                                     setShowGroupDetailsModal(true);
                                   }}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                  className="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-cyan-500/10"
                                 >
                                   Group Details
                                 </button>
@@ -3006,16 +3014,16 @@ export default function MessagesPage() {
                       <>
                         <div className="flex items-center space-x-3">
                           <div className="relative">
-                            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                            <div className="w-10 h-10 bg-cyan-700/70 rounded-full flex items-center justify-center text-white font-bold">
                               {selectedUserWithStatus.username.charAt(0).toUpperCase()}
                             </div>
                             {selectedUserWithStatus.is_online && (
-                              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#0a162a] rounded-full"></div>
                             )}
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-800">{selectedUserWithStatus.username}</h3>
-                            <p className="text-sm text-gray-500">
+                            <h3 className="font-semibold text-slate-100">{selectedUserWithStatus.username}</h3>
+                            <p className="text-sm text-slate-400">
                               {selectedUserWithStatus.is_online ? 'Online' : formatLastSeen(selectedUserWithStatus.last_seen)}
                             </p>
                           </div>
@@ -3025,7 +3033,7 @@ export default function MessagesPage() {
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={toggleConversationPin}
-                            className="p-2 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded"
+                            className="p-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 rounded"
                             title="Pin or unpin chat"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3034,7 +3042,7 @@ export default function MessagesPage() {
                           </button>
                           <button
                             onClick={toggleConversationHidden}
-                            className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded"
+                            className="p-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-slate-200 rounded"
                             title={selectedConversationMeta?.is_hidden ? 'Unhide chat' : 'Hide chat'}
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3043,7 +3051,7 @@ export default function MessagesPage() {
                           </button>
                           <button
                             onClick={toggleConversationLock}
-                            className="p-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded"
+                            className="p-2 bg-sky-500/15 hover:bg-sky-500/25 text-sky-200 rounded"
                             title={isConversationLocked ? 'Unlock chat' : 'Lock chat'}
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3053,20 +3061,20 @@ export default function MessagesPage() {
                           <button
                             onClick={() => startCall(selectedUserWithStatus.username, 'audio')}
                             disabled={isCallActive}
-                            className="p-2 hover:bg-gray-100 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-2 hover:bg-cyan-500/15 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Audio Call"
                           >
-                            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-6 h-6 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                             </svg>
                           </button>
                           <button
                             onClick={() => startCall(selectedUserWithStatus.username, 'video')}
                             disabled={isCallActive}
-                            className="p-2 hover:bg-gray-100 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-2 hover:bg-cyan-500/15 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Video Call"
                           >
-                            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-6 h-6 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                             </svg>
                           </button>
@@ -3075,19 +3083,23 @@ export default function MessagesPage() {
                     ) : null}
                   </div>
 
+                  <div className="px-4 py-1.5 text-[11px] uppercase tracking-[0.15em] text-slate-500 border-b border-cyan-900/30 bg-[#071226]">
+                    End-to-end encrypted · AES-256 / ECC-521
+                  </div>
+
                   {isLockedForView ? (
                     <div className="flex-1 flex items-center justify-center p-8">
                       <div className="max-w-md text-center">
-                        <div className="w-16 h-16 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center mx-auto mb-4">
+                          <div className="w-16 h-16 rounded-full bg-sky-500/20 text-sky-200 flex items-center justify-center mx-auto mb-4">
                           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11V7a4 4 0 00-8 0v4M7 11h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" />
                           </svg>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900">Chat locked</h3>
-                        <p className="text-sm text-gray-600 mt-2">Enter your password to view and send messages.</p>
+                        <h3 className="text-lg font-semibold text-slate-100">Chat locked</h3>
+                        <p className="text-sm text-slate-400 mt-2">Enter your password to view and send messages.</p>
                         <button
                           onClick={() => setUnlockingConversationId(selectedConversationId)}
-                          className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+                          className="mt-4 px-4 py-2 rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400"
                         >
                           Unlock chat
                         </button>
@@ -3104,7 +3116,7 @@ export default function MessagesPage() {
                         const typingUser = typingKey ? typingByConversation[typingKey] : '';
                         if (!typingUser) return null;
                         return (
-                          <div className="px-4 pb-2 text-xs text-blue-600 animate-pulse">
+                          <div className="px-4 pb-2 text-xs text-cyan-300 animate-pulse">
                             {typingUser} is typing...
                           </div>
                         );
@@ -3115,12 +3127,12 @@ export default function MessagesPage() {
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           placeholder="Search messages"
-                          className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
+                          className="flex-1 secure-input text-sm"
                         />
                         <select
                           value={messageFilter}
                           onChange={(e) => setMessageFilter(e.target.value as 'all' | 'pinned' | 'polls' | 'mentions')}
-                          className="px-2 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
+                          className="secure-select px-2 py-2 text-sm"
                         >
                           <option value="all">All</option>
                           <option value="pinned">Pinned</option>
@@ -3130,22 +3142,22 @@ export default function MessagesPage() {
                       </div>
 
                       {/* Messages */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[linear-gradient(180deg,_rgba(248,250,252,0.7)_0%,_rgba(255,255,255,0.95)_100%)]">
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[linear-gradient(180deg,_rgba(8,18,36,0.75)_0%,_rgba(10,22,42,0.95)_100%)]">
                         {loadingMessages ? (
-                          <div className="text-center text-gray-500">Loading messages...</div>
+                          <div className="text-center text-slate-400">Loading messages...</div>
                         ) : timelineItems.length === 0 ? (
-                          <div className="text-center text-gray-500">No messages yet. Start the conversation!</div>
+                          <div className="text-center text-slate-400">No messages yet. Start the conversation!</div>
                         ) : (
                           timelineItems.map((timelineItem, index) => {
                             if (timelineItem.kind === 'call') {
                               const call = timelineItem.item;
                               return (
                                 <div key={`call-${call.id}-${index}`} className="flex justify-center">
-                                  <div className="px-3 py-2 rounded-full bg-gray-100 text-gray-700 text-sm border border-gray-200">
+                                  <div className="px-3 py-2 rounded-full bg-cyan-500/10 text-cyan-100 text-sm border border-cyan-400/25">
                                     <span className="font-medium">
                                       {call.call_type === 'video' ? '📹' : '📞'} {getCallSummary(call)}
                                     </span>
-                                    <span className="ml-2 text-xs text-gray-500">{formatDate(call.initiated_at)}</span>
+                                    <span className="ml-2 text-xs text-slate-400">{formatDate(call.initiated_at)}</span>
                                   </div>
                                 </div>
                               );
@@ -3156,11 +3168,11 @@ export default function MessagesPage() {
                             if (callEvent) {
                               return (
                                 <div key={`call-event-${message.id}-${index}`} className="flex justify-center">
-                                  <div className="px-3 py-2 rounded-full bg-indigo-50 text-indigo-800 text-sm border border-indigo-200">
+                                  <div className="px-3 py-2 rounded-full bg-sky-500/12 text-sky-100 text-sm border border-sky-400/25">
                                     <span className="font-medium">
                                       {callEvent.callType === 'video' ? '📹' : '📞'} {callEvent.username} {callEvent.eventText}
                                     </span>
-                                    <span className="ml-2 text-xs text-indigo-600">{formatDate(getMessageDate(message))}</span>
+                                    <span className="ml-2 text-xs text-slate-400">{formatDate(getMessageDate(message))}</span>
                                   </div>
                                 </div>
                               );
@@ -3176,8 +3188,8 @@ export default function MessagesPage() {
                                   <div
                                     className={`px-4 py-2.5 rounded-2xl shadow-sm border ${
                                       isOwn
-                                        ? 'bg-sky-600 border-sky-500 text-white'
-                                        : 'bg-white border-slate-200 text-slate-800'
+                                        ? 'bg-cyan-900/60 border-cyan-500/35 text-cyan-50'
+                                        : 'bg-slate-800/45 border-slate-600/35 text-slate-100'
                                     }`}
                                   >
                                     {attachment ? (
@@ -3381,7 +3393,7 @@ export default function MessagesPage() {
                                     {selectedGroupConversationId && (
                                       <button
                                         onClick={() => toggleMessagePin(message)}
-                                        className="px-2 py-0.5 rounded-full text-xs border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                        className="px-2 py-0.5 rounded-full text-xs border border-cyan-500/30 bg-cyan-900/40 text-cyan-100 hover:bg-cyan-800/50"
                                         title="Pin message"
                                       >
                                         {message.is_pinned ? '📌' : '📍'}
@@ -3392,13 +3404,13 @@ export default function MessagesPage() {
                                       <>
                                         <button
                                           onClick={() => editMessage(message)}
-                                          className="px-2 py-0.5 rounded-full text-xs border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                          className="px-2 py-0.5 rounded-full text-xs border border-slate-500/40 bg-slate-800/50 text-slate-200 hover:bg-slate-700/50"
                                         >
                                           Edit
                                         </button>
                                         <button
                                           onClick={() => showEditHistory(message)}
-                                          className="px-2 py-0.5 rounded-full text-xs border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                          className="px-2 py-0.5 rounded-full text-xs border border-slate-500/40 bg-slate-800/50 text-slate-200 hover:bg-slate-700/50"
                                         >
                                           History
                                         </button>
@@ -3411,8 +3423,8 @@ export default function MessagesPage() {
                                         onClick={() => reactToMessage(message.id, reaction.emoji)}
                                         className={`px-2 py-0.5 rounded-full text-xs border transition ${
                                           reaction.reacted
-                                            ? 'bg-blue-100 text-blue-700 border-blue-300'
-                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                            ? 'bg-cyan-700/35 text-cyan-100 border-cyan-400/40'
+                                            : 'bg-slate-800/50 text-slate-200 border-slate-500/40 hover:bg-slate-700/50'
                                         }`}
                                       >
                                         {reaction.emoji} {reaction.count}
@@ -3422,14 +3434,14 @@ export default function MessagesPage() {
                                     <div className="relative">
                                       <button
                                         onClick={() => setReactionPickerForMessageId((prev) => prev === message.id ? null : message.id)}
-                                        className="px-2 py-0.5 rounded-full text-xs border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                        className="px-2 py-0.5 rounded-full text-xs border border-slate-500/40 bg-slate-800/50 text-slate-200 hover:bg-slate-700/50"
                                       >
                                         +
                                       </button>
 
                                       {reactionPickerForMessageId === message.id && (
                                         <div
-                                          className={`absolute mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-1 z-20 flex gap-1 whitespace-nowrap ${
+                                          className={`absolute mt-1 bg-[#0b1b34] border border-cyan-200/20 rounded-lg shadow-lg p-1 z-20 flex gap-1 whitespace-nowrap ${
                                             isOwn ? 'right-0' : 'left-0'
                                           }`}
                                         >
@@ -3437,7 +3449,7 @@ export default function MessagesPage() {
                                             <button
                                               key={`${message.id}-${emoji}`}
                                               onClick={() => reactToMessage(message.id, emoji)}
-                                              className="w-7 h-7 rounded hover:bg-gray-100"
+                                              className="w-7 h-7 rounded hover:bg-cyan-500/20"
                                             >
                                               {emoji}
                                             </button>
@@ -3467,9 +3479,9 @@ export default function MessagesPage() {
                       </div>
 
                       {/* Message Input */}
-                      <form onSubmit={sendMessage} className="p-4 border-t border-slate-200 bg-white/90 backdrop-blur-sm">
+                      <form onSubmit={sendMessage} className="p-4 border-t border-cyan-200/15 bg-[#0b1930]/80 backdrop-blur-sm">
                         {currentConversationKey && draftByConversation[currentConversationKey] && (
-                          <p className="text-xs text-gray-500 mb-2">Draft saved</p>
+                          <p className="text-xs text-slate-500 mb-2">Draft saved</p>
                         )}
                         <div className="flex items-center space-x-3">
                           <input
@@ -3482,7 +3494,7 @@ export default function MessagesPage() {
                             type="button"
                             onClick={handleSelectAttachment}
                             disabled={uploadingAttachment}
-                            className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-50"
+                            className="p-2 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-slate-200 disabled:opacity-50"
                             title="Send image or file"
                           >
                             {uploadingAttachment ? (
@@ -3499,7 +3511,7 @@ export default function MessagesPage() {
                           <button
                             type="button"
                             onClick={() => setShowPollModal(true)}
-                            className="p-2 rounded-full bg-violet-100 hover:bg-violet-200 text-violet-700"
+                            className="p-2 rounded-full bg-violet-500/15 hover:bg-violet-500/25 text-violet-200"
                             title="Create poll"
                           >
                             <span className="text-sm font-semibold">Poll</span>
@@ -3507,7 +3519,7 @@ export default function MessagesPage() {
                           <select
                             value={messageExpirationHours}
                             onChange={(e) => setMessageExpirationHours(Number(e.target.value))}
-                            className="px-2 py-1 text-xs border border-gray-300 rounded-md bg-white text-gray-700"
+                            className="px-2 py-1 text-xs border border-cyan-300/25 rounded-md bg-[#0b1a31] text-slate-300"
                             title="Message expiration"
                           >
                             <option value={24}>24h</option>
@@ -3518,19 +3530,19 @@ export default function MessagesPage() {
                             <button
                               type="button"
                               onClick={() => setShowEmojiPicker((prev) => !prev)}
-                              className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700"
+                              className="p-2 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-slate-200"
                               title="Add emoji"
                             >
                               <span className="text-lg">😊</span>
                             </button>
                             {showEmojiPicker && (
-                              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 bg-white border border-gray-200 rounded-xl shadow-xl p-2 grid grid-cols-6 gap-1 z-50 w-56 max-h-48 overflow-y-auto">
+                              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 bg-[#0b1b34] border border-cyan-200/20 rounded-xl shadow-xl p-2 grid grid-cols-6 gap-1 z-50 w-56 max-h-48 overflow-y-auto">
                                 {emojiList.map((emoji) => (
                                   <button
                                     key={emoji}
                                     type="button"
                                     onClick={() => appendEmoji(emoji)}
-                                    className="w-8 h-8 rounded hover:bg-gray-100 flex items-center justify-center"
+                                    className="w-8 h-8 rounded hover:bg-cyan-500/15 flex items-center justify-center"
                                   >
                                     {emoji}
                                   </button>
@@ -3540,15 +3552,15 @@ export default function MessagesPage() {
                           </div>
                           <div className="relative flex-1">
                             {mentionSuggestions.length > 0 && (
-                              <div className="absolute bottom-12 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg z-40 max-h-44 overflow-y-auto">
+                              <div className="absolute bottom-12 left-0 right-0 bg-[#0b1b34] border border-cyan-200/20 rounded-xl shadow-lg z-40 max-h-44 overflow-y-auto">
                                 {mentionSuggestions.map((candidate) => (
                                   <button
                                     key={`mention-${candidate.id}`}
                                     type="button"
                                     onClick={() => insertMention(candidate.username)}
-                                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-cyan-500/15"
                                   >
-                                    <span className="font-medium text-indigo-700">@{candidate.username}</span>
+                                    <span className="font-medium text-cyan-200">@{candidate.username}</span>
                                   </button>
                                 ))}
                               </div>
@@ -3560,13 +3572,13 @@ export default function MessagesPage() {
                               onChange={(e) => handleMessageInputChange(e.target.value, e.target.selectionStart ?? e.target.value.length)}
                               onKeyDown={handleMessageInputKeyDown}
                               placeholder="Type a message, emoji, or send a file..."
-                              className="w-full px-4 py-2.5 border border-slate-300 rounded-full bg-white focus:outline-none focus:ring-2 focus:ring-sky-300"
+                              className="w-full px-4 py-2.5 border border-cyan-300/25 rounded-full bg-[#081224] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400/25"
                             />
                           </div>
                           <button
                             type="submit"
                             disabled={!messageContent.trim()}
-                            className="bg-sky-600 hover:bg-sky-700 disabled:bg-slate-400 text-white p-3 rounded-full transition shadow-sm"
+                            className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-500 text-slate-950 p-3 rounded-full transition shadow-sm"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -3579,8 +3591,8 @@ export default function MessagesPage() {
                 </>
               ) : (
                 <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                    <svg className="w-24 h-24 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="text-center text-slate-400">
+                    <svg className="w-24 h-24 mx-auto mb-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                     <h3 className="text-xl font-semibold mb-2">Select a conversation</h3>
@@ -3598,10 +3610,10 @@ export default function MessagesPage() {
           <div
             className={`px-4 py-2 rounded-lg shadow-lg text-sm font-medium border animate-toast-in ${
               toast.tone === 'success'
-                ? 'bg-green-50 text-green-800 border-green-200'
+                ? 'bg-emerald-500/20 text-emerald-100 border-emerald-300/30'
                 : toast.tone === 'error'
-                  ? 'bg-red-50 text-red-800 border-red-200'
-                  : 'bg-blue-50 text-blue-800 border-blue-200'
+                  ? 'bg-rose-500/20 text-rose-100 border-rose-300/30'
+                  : 'bg-cyan-500/20 text-cyan-100 border-cyan-300/30'
             }`}
           >
             {toast.message}
@@ -3652,26 +3664,26 @@ export default function MessagesPage() {
 
       {incomingGroupCall && !isConferenceCallActive && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Incoming Group Call</h3>
-            <p className="text-sm text-gray-700">
+          <div className="secure-panel w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-slate-100 mb-2">Incoming Group Call</h3>
+            <p className="text-sm text-slate-300">
               <span className="font-medium">{incomingGroupCall.host_username || 'Someone'}</span>
               {' '}started a {incomingGroupCall.call_type} call.
             </p>
-            <p className="text-sm text-gray-700 mt-1">
+            <p className="text-sm text-slate-300 mt-1">
               Room: <span className="font-medium">{incomingGroupCall.title || `Conference ${incomingGroupCall.conference_id}`}</span>
             </p>
 
             <div className="flex items-center justify-end space-x-2 mt-6">
               <button
                 onClick={handleDismissIncomingGroupCall}
-                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
+                className="px-4 py-2 rounded-lg bg-cyan-500/10 text-slate-200 hover:bg-cyan-500/20"
               >
                 Dismiss
               </button>
               <button
                 onClick={handleJoinIncomingGroupCall}
-                className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+                className="px-4 py-2 rounded-lg bg-emerald-500 text-slate-950 hover:bg-emerald-400"
               >
                 Join Call
               </button>
@@ -3682,12 +3694,12 @@ export default function MessagesPage() {
 
       {showCreateGroupModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+          <div className="secure-panel w-full max-w-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Create Group</h3>
+              <h3 className="text-lg font-semibold text-slate-100">Create Group</h3>
               <button
                 onClick={() => setShowCreateGroupModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-slate-500 hover:text-slate-300"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -3697,23 +3709,23 @@ export default function MessagesPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Group Name (optional)</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Group Name (optional)</label>
                 <input
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
                   placeholder="e.g. Ops Team"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="secure-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Members</label>
-                <div className="max-h-52 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                <label className="block text-sm font-medium text-slate-300 mb-2">Select Members</label>
+                <div className="max-h-52 overflow-y-auto border border-cyan-200/20 rounded-lg divide-y divide-cyan-200/10 bg-cyan-500/5">
                   {sortedUsersWithOnlineStatus.map((member) => (
-                    <label key={member.id} className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-50">
+                    <label key={member.id} className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-cyan-500/10">
                       <div>
-                        <p className="text-sm font-medium text-gray-800">{member.username}</p>
-                        <p className="text-xs text-gray-500">{member.is_online ? 'Online' : formatLastSeen(member.last_seen)}</p>
+                        <p className="text-sm font-medium text-slate-100">{member.username}</p>
+                        <p className="text-xs text-slate-400">{member.is_online ? 'Online' : formatLastSeen(member.last_seen)}</p>
                       </div>
                       <input
                         type="checkbox"
@@ -3724,21 +3736,21 @@ export default function MessagesPage() {
                     </label>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Selected: {newGroupMemberIds.length}</p>
+                <p className="text-xs text-slate-400 mt-1">Selected: {newGroupMemberIds.length}</p>
               </div>
             </div>
 
             <div className="flex items-center justify-end space-x-2 mt-6">
               <button
                 onClick={() => setShowCreateGroupModal(false)}
-                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
+                className="px-4 py-2 rounded-lg bg-cyan-500/10 text-slate-200 hover:bg-cyan-500/20"
               >
                 Cancel
               </button>
               <button
                 onClick={createGroupConversation}
                 disabled={newGroupMemberIds.length === 0 || creatingGroup}
-                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-400"
+                className="px-4 py-2 rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400 disabled:bg-slate-500"
               >
                 {creatingGroup ? 'Creating...' : 'Create Group'}
               </button>
@@ -3749,14 +3761,14 @@ export default function MessagesPage() {
 
       {showGroupCallModal && selectedGroupConversationId && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+          <div className="secure-panel w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-slate-100">
                 Start {groupCallType === 'video' ? 'Video' : 'Audio'} Group Call
               </h3>
               <button
                 onClick={() => setShowGroupCallModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-slate-500 hover:text-slate-300"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -3765,13 +3777,13 @@ export default function MessagesPage() {
             </div>
 
             <div className="mb-5">
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-slate-300">
                 Group: <span className="font-medium">{selectedGroupName || `Group ${selectedGroupConversationId}`}</span>
               </p>
-              <p className="text-sm text-gray-700 mt-1">
+              <p className="text-sm text-slate-300 mt-1">
                 Participants: <span className="font-medium">{selectedGroupParticipantIds.length + 1}</span>
               </p>
-              <p className="text-xs text-gray-500 mt-3">
+              <p className="text-xs text-slate-400 mt-3">
                 The group call will open directly on this page.
               </p>
             </div>
@@ -3779,14 +3791,14 @@ export default function MessagesPage() {
             <div className="flex items-center justify-end space-x-2">
               <button
                 onClick={() => setShowGroupCallModal(false)}
-                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
+                className="px-4 py-2 rounded-lg bg-cyan-500/10 text-slate-200 hover:bg-cyan-500/20"
               >
                 Cancel
               </button>
               <button
                 onClick={() => startGroupCall(groupCallType)}
                 disabled={startingGroupCall}
-                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-400"
+                className="px-4 py-2 rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400 disabled:bg-slate-500"
               >
                 {startingGroupCall ? 'Starting...' : 'Start Call'}
               </button>

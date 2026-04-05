@@ -129,36 +129,36 @@ export default function SettingsPage() {
   };
 
   if (loading || !isAuthenticated) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="secure-screen flex items-center justify-center text-slate-300">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+    <div className="secure-screen">
+      <nav className="secure-nav">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <button onClick={() => router.push('/dashboard')} className="text-gray-600 hover:text-gray-900">
+            <button onClick={() => router.push('/dashboard')} className="text-slate-400 hover:text-cyan-200 transition">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </button>
-            <h1 className="text-xl font-semibold text-gray-800">User Controls</h1>
+            <h1 className="text-xl font-semibold secure-title">User Controls</h1>
           </div>
-          <button onClick={logout} className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600">Logout</button>
+          <button onClick={logout} className="px-4 py-2 rounded-xl bg-rose-500/20 border border-rose-300/40 text-rose-100 hover:bg-rose-500/30 transition">Logout</button>
         </div>
       </nav>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Presence</h2>
+        <section className="secure-panel p-5">
+          <h2 className="text-lg font-semibold text-slate-100 mb-4">Presence</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Online status</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Online status</label>
               <select
                 value={onlineStatus}
                 onChange={(e) => updatePresence(e.target.value as OnlineStatus)}
                 disabled={savingStatus}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                className="secure-select"
               >
                 <option value="available">Available</option>
                 <option value="dnd">Do Not Disturb</option>
@@ -166,22 +166,22 @@ export default function SettingsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last seen</label>
-              <p className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">{formatLastSeen(lastSeen)}</p>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Last seen</label>
+              <p className="px-3 py-2 rounded-lg border border-cyan-200/20 bg-cyan-500/5 text-slate-300">{formatLastSeen(lastSeen)}</p>
             </div>
           </div>
         </section>
 
-        <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Messaging Defaults</h2>
+        <section className="secure-panel p-5">
+          <h2 className="text-lg font-semibold text-slate-100 mb-4">Messaging Defaults</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Default message expiration</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Default message expiration</label>
               <select
                 value={settings.default_message_expiration_hours}
                 onChange={(e) => saveSettings({ default_message_expiration_hours: Number(e.target.value) })}
                 disabled={savingSettings}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                className="secure-select"
               >
                 <option value={24}>24 hours</option>
                 <option value={168}>7 days</option>
@@ -189,44 +189,44 @@ export default function SettingsPage() {
               </select>
             </div>
             <div className="flex items-end">
-              <p className="text-sm text-gray-600">Per-message expiration can be set in the chat composer (24h / 7d / 90d).</p>
+              <p className="text-sm text-slate-400">Per-message expiration can be set in the chat composer (24h / 7d / 90d).</p>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-            <label className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
-              <span className="text-sm text-gray-700">Share online status</span>
+            <label className="flex items-center justify-between border border-cyan-200/20 rounded-lg px-3 py-2 bg-cyan-500/5">
+              <span className="text-sm text-slate-300">Share online status</span>
               <input
                 type="checkbox"
                 checked={settings.show_online_status}
                 onChange={(e) => saveSettings({ show_online_status: e.target.checked })}
               />
             </label>
-            <label className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
-              <span className="text-sm text-gray-700">Share last seen</span>
+            <label className="flex items-center justify-between border border-cyan-200/20 rounded-lg px-3 py-2 bg-cyan-500/5">
+              <span className="text-sm text-slate-300">Share last seen</span>
               <input
                 type="checkbox"
                 checked={settings.show_last_seen}
                 onChange={(e) => saveSettings({ show_last_seen: e.target.checked })}
               />
             </label>
-            <label className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
-              <span className="text-sm text-gray-700">Read receipts</span>
+            <label className="flex items-center justify-between border border-cyan-200/20 rounded-lg px-3 py-2 bg-cyan-500/5">
+              <span className="text-sm text-slate-300">Read receipts</span>
               <input
                 type="checkbox"
                 checked={settings.show_read_receipts}
                 onChange={(e) => saveSettings({ show_read_receipts: e.target.checked })}
               />
             </label>
-            <label className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
-              <span className="text-sm text-gray-700">Typing indicators</span>
+            <label className="flex items-center justify-between border border-cyan-200/20 rounded-lg px-3 py-2 bg-cyan-500/5">
+              <span className="text-sm text-slate-300">Typing indicators</span>
               <input
                 type="checkbox"
                 checked={settings.show_typing_indicators}
                 onChange={(e) => saveSettings({ show_typing_indicators: e.target.checked })}
               />
             </label>
-            <label className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
-              <span className="text-sm text-gray-700">Calendar suggestions</span>
+            <label className="flex items-center justify-between border border-cyan-200/20 rounded-lg px-3 py-2 bg-cyan-500/5">
+              <span className="text-sm text-slate-300">Calendar suggestions</span>
               <input
                 type="checkbox"
                 checked={settings.calendar_events_enabled}
@@ -236,11 +236,11 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Chat Lock</h2>
+        <section className="secure-panel p-5">
+          <h2 className="text-lg font-semibold text-slate-100 mb-4">Chat Lock</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
-              <span className="text-sm text-gray-700">Enable chat lock</span>
+            <label className="flex items-center justify-between border border-cyan-200/20 rounded-lg px-3 py-2 bg-cyan-500/5">
+              <span className="text-sm text-slate-300">Enable chat lock</span>
               <input
                 type="checkbox"
                 checked={settings.app_lock_enabled}
@@ -248,49 +248,49 @@ export default function SettingsPage() {
               />
             </label>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Lock timeout (minutes)</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Lock timeout (minutes)</label>
               <input
                 type="number"
                 min={1}
                 max={120}
                 value={settings.app_lock_timeout_minutes}
                 onChange={(e) => saveSettings({ app_lock_timeout_minutes: Number(e.target.value || 5) })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                className="secure-input"
               />
             </div>
           </div>
         </section>
 
-        <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Change Password</h2>
+        <section className="secure-panel p-5">
+          <h2 className="text-lg font-semibold text-slate-100 mb-4">Change Password</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <input
               type="password"
               placeholder="Current password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2"
+              className="secure-input"
             />
             <input
               type="password"
               placeholder="New password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2"
+              className="secure-input"
             />
             <input
               type="password"
               placeholder="Confirm new password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2"
+              className="secure-input"
             />
           </div>
           <div className="mt-3">
             <button
               onClick={changePassword}
               disabled={changingPassword}
-              className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="secure-btn disabled:opacity-50"
             >
               {changingPassword ? 'Updating...' : 'Update Password'}
             </button>

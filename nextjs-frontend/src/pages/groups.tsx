@@ -130,54 +130,54 @@ export default function GroupsPage() {
   };
 
   if (loading || !isAuthenticated) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="secure-screen flex items-center justify-center text-slate-300">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="secure-screen p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Groups</h1>
+          <h1 className="text-2xl font-bold secure-title">Groups</h1>
           <button
             onClick={() => router.push('/dashboard')}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
+            className="secure-btn-secondary"
           >
             Back
           </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <form onSubmit={createMessageGroup} className="bg-white rounded-lg shadow-sm border p-5">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">Create Message Group</h2>
+          <form onSubmit={createMessageGroup} className="secure-panel p-5">
+            <h2 className="text-lg font-semibold text-slate-100 mb-3">Create Message Group</h2>
             <input
               type="text"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="Group name"
-              className="w-full border rounded-lg px-3 py-2 mb-3"
+              className="secure-input mb-3"
             />
             <button
               type="submit"
               disabled={savingMessageGroup}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 disabled:bg-gray-400"
+              className="secure-btn w-full disabled:opacity-60"
             >
               {savingMessageGroup ? 'Creating...' : 'Create Message Group'}
             </button>
           </form>
 
-          <form onSubmit={createConferenceGroup} className="bg-white rounded-lg shadow-sm border p-5">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">Create Group Call</h2>
+          <form onSubmit={createConferenceGroup} className="secure-panel p-5">
+            <h2 className="text-lg font-semibold text-slate-100 mb-3">Create Group Call</h2>
             <input
               type="text"
               value={conferenceTitle}
               onChange={(e) => setConferenceTitle(e.target.value)}
               placeholder="Call title (optional)"
-              className="w-full border rounded-lg px-3 py-2 mb-3"
+              className="secure-input mb-3"
             />
             <select
               value={conferenceCallType}
               onChange={(e) => setConferenceCallType(e.target.value as 'audio' | 'video')}
-              className="w-full border rounded-lg px-3 py-2 mb-3"
+              className="secure-select mb-3"
             >
               <option value="video">Video</option>
               <option value="audio">Audio</option>
@@ -185,18 +185,18 @@ export default function GroupsPage() {
             <button
               type="submit"
               disabled={savingConferenceGroup}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-2 disabled:bg-gray-400"
+              className="secure-btn w-full disabled:opacity-60"
             >
               {savingConferenceGroup ? 'Creating...' : 'Create Group Call'}
             </button>
           </form>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border p-5 mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Select Group Members</h2>
+        <div className="secure-panel p-5 mb-6">
+          <h2 className="text-lg font-semibold text-slate-100 mb-3">Select Group Members</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
             {users.map((user) => (
-              <label key={user.id} className="flex items-center space-x-2 border rounded px-3 py-2">
+              <label key={user.id} className="flex items-center space-x-2 border border-cyan-200/20 rounded-xl bg-cyan-500/5 px-3 py-2 text-slate-200">
                 <input
                   type="checkbox"
                   checked={selectedUsers.includes(user.id)}
@@ -209,19 +209,19 @@ export default function GroupsPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow-sm border p-5">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">Message Groups</h2>
+          <div className="secure-panel p-5">
+            <h2 className="text-lg font-semibold text-slate-100 mb-3">Message Groups</h2>
             {messageGroups.length === 0 ? (
-              <p className="text-gray-500">No message groups yet.</p>
+              <p className="text-slate-400">No message groups yet.</p>
             ) : (
               <div className="space-y-3">
                 {messageGroups.map((group) => (
-                  <div key={group.id} className="border rounded-lg p-3">
-                    <div className="font-semibold">{group.name || `Group ${group.id}`}</div>
-                    <div className="text-sm text-gray-500">Members: {group.participants?.length || 0}</div>
+                  <div key={group.id} className="border border-cyan-200/20 rounded-xl bg-cyan-500/5 p-3">
+                    <div className="font-semibold text-slate-100">{group.name || `Group ${group.id}`}</div>
+                    <div className="text-sm text-slate-400">Members: {group.participants?.length || 0}</div>
                     <button
                       onClick={() => router.push(`/messages?conversation=${group.id}`)}
-                      className="mt-2 text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded"
+                      className="mt-2 text-sm secure-btn-secondary px-3 py-1"
                     >
                       Open Messages
                     </button>
@@ -231,16 +231,16 @@ export default function GroupsPage() {
             )}
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border p-5">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">Group Calls</h2>
+          <div className="secure-panel p-5">
+            <h2 className="text-lg font-semibold text-slate-100 mb-3">Group Calls</h2>
             {conferenceGroups.length === 0 ? (
-              <p className="text-gray-500">No group calls yet.</p>
+              <p className="text-slate-400">No group calls yet.</p>
             ) : (
               <div className="space-y-3">
                 {conferenceGroups.map((call) => (
-                  <div key={call.id} className="border rounded-lg p-3">
-                    <div className="font-semibold">{call.title || `Conference ${call.id}`}</div>
-                    <div className="text-sm text-gray-500">
+                  <div key={call.id} className="border border-cyan-200/20 rounded-xl bg-cyan-500/5 p-3">
+                    <div className="font-semibold text-slate-100">{call.title || `Conference ${call.id}`}</div>
+                    <div className="text-sm text-slate-400">
                       {call.call_type.toUpperCase()} • Participants: {call.participant_count} • {call.status}
                     </div>
                     <button
@@ -253,7 +253,7 @@ export default function GroupsPage() {
                           alert('Failed to join conference call');
                         }
                       }}
-                      className="mt-2 text-sm bg-indigo-100 text-indigo-700 px-3 py-1 rounded"
+                      className="mt-2 text-sm secure-btn-secondary px-3 py-1"
                     >
                       Open Group Call
                     </button>

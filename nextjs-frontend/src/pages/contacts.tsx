@@ -138,27 +138,27 @@ export default function ContactsPage() {
   };
 
   if (loading || !isAuthenticated) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="secure-screen flex items-center justify-center text-slate-300">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="secure-screen">
       {/* Header */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="secure-nav">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="mr-4 text-gray-600 hover:text-gray-900"
+                className="mr-4 text-slate-400 hover:text-cyan-200 transition"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
               </button>
-              <h1 className="text-xl font-bold text-gray-800">My Contacts</h1>
+              <h1 className="text-xl font-bold secure-title">My Contacts</h1>
               {connected && (
-                <span className="ml-3 flex items-center text-xs text-green-600">
+                <span className="ml-3 flex items-center text-xs text-emerald-300">
                   <span className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
                   Live
                 </span>
@@ -170,17 +170,17 @@ export default function ContactsPage() {
 
       <main className="max-w-5xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* Search */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 border border-gray-200">
+        <div className="secure-panel p-4 mb-6">
           <div className="relative">
             <input
               type="text"
               placeholder="Search contacts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="secure-input pl-10"
             />
             <svg
-              className="absolute left-3 top-3 w-5 h-5 text-gray-400"
+              className="absolute left-3 top-3 w-5 h-5 text-slate-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -196,13 +196,13 @@ export default function ContactsPage() {
         </div>
 
         {/* Add Contact */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 border border-gray-200">
-          <h2 className="text-sm font-semibold text-gray-800 mb-3">Add Contact</h2>
+        <div className="secure-panel p-4 mb-6">
+          <h2 className="text-sm font-semibold text-slate-200 mb-3">Add Contact</h2>
           <div className="flex flex-col sm:flex-row gap-3">
             <select
               value={selectedUserId}
               onChange={(e) => setSelectedUserId(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="secure-select flex-1"
             >
               <option value="">Select a user</option>
               {availableUsers.map((candidate) => (
@@ -214,48 +214,48 @@ export default function ContactsPage() {
             <button
               onClick={addContact}
               disabled={!selectedUserId || addingContact}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="secure-btn disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {addingContact ? 'Adding...' : 'Add'}
             </button>
           </div>
           {availableUsers.length === 0 && (
-            <p className="text-xs text-gray-500 mt-2">No available users to add right now.</p>
+            <p className="text-xs text-slate-400 mt-2">No available users to add right now.</p>
           )}
         </div>
 
         {/* Favorites */}
         {favoriteContacts.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-amber-200 mb-6">
-            <div className="px-4 py-3 border-b border-amber-200 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-amber-700">Favorite Contacts</h2>
-              <span className="text-xs text-amber-600">{favoriteContacts.length}</span>
+          <div className="secure-panel border-amber-300/20 mb-6">
+            <div className="px-4 py-3 border-b border-amber-300/20 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-amber-200">Favorite Contacts</h2>
+              <span className="text-xs text-amber-300">{favoriteContacts.length}</span>
             </div>
-            <div className="divide-y divide-amber-100">
+            <div className="divide-y divide-amber-300/10">
               {favoriteContacts.map((contact) => (
-                <div key={`favorite-${contact.id}`} className="p-4 hover:bg-amber-50 transition">
+                <div key={`favorite-${contact.id}`} className="p-4 hover:bg-amber-400/10 transition">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="relative">
-                        <div className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        <div className="w-12 h-12 bg-amber-500/70 rounded-full flex items-center justify-center text-white font-bold text-lg">
                           {contact.username.charAt(0).toUpperCase()}
                         </div>
                         {contact.is_online && (
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#081224]"></div>
                         )}
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">
+                        <div className="font-semibold text-slate-100">
                           {contact.alias || contact.username}
                         </div>
                         {contact.alias && (
-                          <div className="text-xs text-gray-400">@{contact.username}</div>
+                          <div className="text-xs text-slate-500">@{contact.username}</div>
                         )}
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-slate-400">
                           {contact.is_online ? (
                             <span className="text-green-600">● {contact.online_status}</span>
                           ) : (
-                            <span className="text-gray-400">Offline</span>
+                            <span className="text-slate-500">Offline</span>
                           )}
                         </div>
                       </div>
@@ -263,7 +263,7 @@ export default function ContactsPage() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => startMessage(contact)}
-                        className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
+                        className="p-2 rounded-lg bg-cyan-500/15 text-cyan-200 hover:bg-cyan-500/25 transition"
                         title="Send message"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -272,7 +272,7 @@ export default function ContactsPage() {
                       </button>
                       <button
                         onClick={() => startCall(contact, 'audio')}
-                        className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition"
+                        className="p-2 rounded-lg bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 transition"
                         title="Voice call"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -281,7 +281,7 @@ export default function ContactsPage() {
                       </button>
                       <button
                         onClick={() => startCall(contact, 'video')}
-                        className="p-2 bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200 transition"
+                        className="p-2 rounded-lg bg-sky-500/15 text-sky-200 hover:bg-sky-500/25 transition"
                         title="Video call"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -290,14 +290,14 @@ export default function ContactsPage() {
                       </button>
                       <button
                         onClick={() => toggleFavorite(contact.id)}
-                        className="p-2 bg-amber-100 text-amber-600 rounded-lg hover:bg-amber-200 transition"
+                        className="p-2 rounded-lg bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 transition"
                         title="Remove favorite"
                       >
                         ★
                       </button>
                       <button
                         onClick={() => removeContact(contact.id)}
-                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
+                        className="p-2 rounded-lg bg-rose-500/15 text-rose-200 hover:bg-rose-500/25 transition"
                         title="Remove contact"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -313,41 +313,41 @@ export default function ContactsPage() {
         )}
 
         {/* Contacts List */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="secure-panel">
           {regularContacts.length === 0 ? (
             <div className="p-12 text-center">
-              <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-16 h-16 mx-auto text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <p className="text-gray-500">No contacts found</p>
-              <p className="text-sm text-gray-400 mt-2">Use the Add Contact box above to create your list</p>
+              <p className="text-slate-400">No contacts found</p>
+              <p className="text-sm text-slate-500 mt-2">Use the Add Contact box above to create your list</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-cyan-200/10">
               {regularContacts.map((contact) => (
-                <div key={contact.id} className="p-4 hover:bg-gray-50 transition">
+                <div key={contact.id} className="p-4 hover:bg-cyan-400/5 transition">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="relative">
-                        <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        <div className="w-12 h-12 bg-cyan-600/70 rounded-full flex items-center justify-center text-white font-bold text-lg">
                           {contact.username.charAt(0).toUpperCase()}
                         </div>
                         {contact.is_online && (
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#081224]"></div>
                         )}
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">
+                        <div className="font-semibold text-slate-100">
                           {contact.alias || contact.username}
                         </div>
                         {contact.alias && (
-                          <div className="text-xs text-gray-400">@{contact.username}</div>
+                          <div className="text-xs text-slate-500">@{contact.username}</div>
                         )}
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-slate-400">
                           {contact.is_online ? (
                             <span className="text-green-600">● {contact.online_status}</span>
                           ) : (
-                            <span className="text-gray-400">Offline</span>
+                            <span className="text-slate-500">Offline</span>
                           )}
                         </div>
                       </div>
@@ -355,7 +355,7 @@ export default function ContactsPage() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => startMessage(contact)}
-                        className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
+                        className="p-2 rounded-lg bg-cyan-500/15 text-cyan-200 hover:bg-cyan-500/25 transition"
                         title="Send message"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -364,7 +364,7 @@ export default function ContactsPage() {
                       </button>
                       <button
                         onClick={() => startCall(contact, 'audio')}
-                        className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition"
+                        className="p-2 rounded-lg bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 transition"
                         title="Voice call"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -373,7 +373,7 @@ export default function ContactsPage() {
                       </button>
                       <button
                         onClick={() => startCall(contact, 'video')}
-                        className="p-2 bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200 transition"
+                        className="p-2 rounded-lg bg-sky-500/15 text-sky-200 hover:bg-sky-500/25 transition"
                         title="Video call"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -382,14 +382,14 @@ export default function ContactsPage() {
                       </button>
                       <button
                         onClick={() => toggleFavorite(contact.id)}
-                        className="p-2 bg-amber-100 text-amber-600 rounded-lg hover:bg-amber-200 transition"
+                        className="p-2 rounded-lg bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 transition"
                         title="Add to favorites"
                       >
                         ☆
                       </button>
                       <button
                         onClick={() => removeContact(contact.id)}
-                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
+                        className="p-2 rounded-lg bg-rose-500/15 text-rose-200 hover:bg-rose-500/25 transition"
                         title="Remove contact"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

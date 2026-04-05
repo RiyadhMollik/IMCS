@@ -84,8 +84,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setUser(user);
+
+      // Dummy post-login verification flow (OTP -> fingerprint) before dashboard.
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('dummy_otp_verified', '0');
+        sessionStorage.setItem('dummy_fingerprint_verified', '0');
+      }
       
-      router.push('/dashboard');
+      router.push('/auth/otp');
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Login failed');
     }

@@ -411,28 +411,28 @@ export default function CallsPage() {
   };
 
   if (loading || !isAuthenticated) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="secure-screen flex items-center justify-center text-slate-300">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="secure-screen">
       {/* Header */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="secure-nav">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="mr-4 text-gray-600 hover:text-gray-900"
+                className="mr-4 text-slate-400 hover:text-cyan-200 transition"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
               </button>
-              <h1 className="text-xl font-bold text-gray-800">Call History</h1>
+              <h1 className="text-xl font-bold secure-title">Call History</h1>
             </div>
             <div className="flex items-center">
-              <span className="text-sm text-gray-600">{user?.username}</span>
+              <span className="text-sm text-slate-300">{user?.username}</span>
             </div>
           </div>
         </div>
@@ -440,26 +440,26 @@ export default function CallsPage() {
 
       <main className="max-w-5xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {conferenceCall && (
-          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
-            <h2 className="text-lg font-semibold text-indigo-900 mb-1">
+          <div className="secure-panel p-4 mb-6 border-cyan-300/30">
+            <h2 className="text-lg font-semibold text-cyan-100 mb-1">
               {conferenceCall.title || `Conference ${conferenceCall.id}`}
             </h2>
-            <p className="text-sm text-indigo-700 mb-2">
+            <p className="text-sm text-cyan-200 mb-2">
               {conferenceCall.call_type.toUpperCase()} • {conferenceCall.status} • Participants: {conferenceCall.participant_count}
             </p>
-            <p className="text-sm text-indigo-800 font-mono">Room ID: {conferenceCall.room_id}</p>
+            <p className="text-sm text-slate-300 font-mono">Room ID: {conferenceCall.room_id}</p>
           </div>
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 border border-gray-200">
+        <div className="secure-panel p-4 mb-6">
           <div className="flex space-x-2">
             <button
               onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-lg transition ${
                 filter === 'all'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-cyan-500 text-slate-950'
+                  : 'bg-cyan-500/10 text-slate-300 hover:bg-cyan-500/20'
               }`}
             >
               All Calls
@@ -468,8 +468,8 @@ export default function CallsPage() {
               onClick={() => setFilter('incoming')}
               className={`px-4 py-2 rounded-lg transition ${
                 filter === 'incoming'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-cyan-500 text-slate-950'
+                  : 'bg-cyan-500/10 text-slate-300 hover:bg-cyan-500/20'
               }`}
             >
               Incoming
@@ -478,8 +478,8 @@ export default function CallsPage() {
               onClick={() => setFilter('outgoing')}
               className={`px-4 py-2 rounded-lg transition ${
                 filter === 'outgoing'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-cyan-500 text-slate-950'
+                  : 'bg-cyan-500/10 text-slate-300 hover:bg-cyan-500/20'
               }`}
             >
               Outgoing
@@ -488,8 +488,8 @@ export default function CallsPage() {
               onClick={() => setFilter('missed')}
               className={`px-4 py-2 rounded-lg transition ${
                 filter === 'missed'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-cyan-500 text-slate-950'
+                  : 'bg-cyan-500/10 text-slate-300 hover:bg-cyan-500/20'
               }`}
             >
               Missed
@@ -498,51 +498,51 @@ export default function CallsPage() {
         </div>
 
         {/* Call List */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="secure-panel">
           {filteredCalls.length === 0 ? (
             <div className="p-12 text-center">
-              <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-16 h-16 mx-auto text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
-              <p className="text-gray-500">No call history yet</p>
-              <p className="text-sm text-gray-400 mt-2">Your voice and video calls will appear here</p>
+              <p className="text-slate-400">No call history yet</p>
+              <p className="text-sm text-slate-500 mt-2">Your voice and video calls will appear here</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-cyan-200/10">
               {filteredCalls.map((call) => (
-                <div key={call.id} className="p-4 hover:bg-gray-50 transition">
+                <div key={call.id} className="p-4 hover:bg-cyan-500/5 transition">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        call.status === 'missed' ? 'bg-red-100' : 'bg-blue-100'
+                        call.status === 'missed' ? 'bg-rose-500/20' : 'bg-cyan-500/20'
                       }`}>
                         {call.call_type === 'video' ? (
-                          <svg className={`w-6 h-6 ${call.status === 'missed' ? 'text-red-600' : 'text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className={`w-6 h-6 ${call.status === 'missed' ? 'text-rose-300' : 'text-cyan-200'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         ) : (
-                          <svg className={`w-6 h-6 ${call.status === 'missed' ? 'text-red-600' : 'text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className={`w-6 h-6 ${call.status === 'missed' ? 'text-rose-300' : 'text-cyan-200'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                           </svg>
                         )}
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">
+                        <div className="font-semibold text-slate-100">
                           {call.caller.id === user?.id ? call.receiver.username : call.caller.username}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-slate-400">
                           {call.caller.id === user?.id ? 'Outgoing' : 'Incoming'} • {call.call_type}
                           {call.encrypted && (
                             <span className="ml-2 text-green-600">🔒 Encrypted</span>
                           )}
                         </div>
-                        <div className="text-xs text-gray-400">
+                        <div className="text-xs text-slate-500">
                           {new Date(call.initiated_at).toLocaleString()}
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium text-gray-700">
+                      <div className="text-sm font-medium text-slate-300">
                         {call.status === 'ended' && call.duration > 0
                           ? formatDuration(call.duration)
                           : call.status}

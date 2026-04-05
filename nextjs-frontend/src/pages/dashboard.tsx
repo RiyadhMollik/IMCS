@@ -156,6 +156,17 @@ export default function Dashboard() {
         </svg>
       ),
     },
+    {
+      label: 'Settings',
+      description: 'Preferences and security',
+      onClick: () => router.push('/settings'),
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317a1 1 0 011.35-.936l1.122.449a1 1 0 00.74 0l1.122-.449a1 1 0 011.35.936l.09 1.204a1 1 0 00.5.82l1.03.59a1 1 0 01.366 1.366l-.59 1.03a1 1 0 000 .74l.59 1.03a1 1 0 01-.366 1.366l-1.03.59a1 1 0 00-.5.82l-.09 1.204a1 1 0 01-1.35.936l-1.122-.449a1 1 0 00-.74 0l-1.122.449a1 1 0 01-1.35-.936l-.09-1.204a1 1 0 00-.5-.82l-1.03-.59a1 1 0 01-.366-1.366l.59-1.03a1 1 0 000-.74l-.59-1.03a1 1 0 01.366-1.366l1.03-.59a1 1 0 00.5-.82l.09-1.204z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+        </svg>
+      ),
+    },
   ];
 
   return (
@@ -225,14 +236,36 @@ export default function Dashboard() {
       </aside>
 
       <main className="flex-1 w-full py-6 px-4 sm:px-6 lg:px-8">
-        <div className="mb-6">
-          <h2 className="secure-title text-2xl font-bold">Dashboard</h2>
-          <p className="text-slate-400 mt-1">Internal Messaging & Calling Software</p>
+        <div className="mb-6 flex items-start justify-between gap-3">
+          <div>
+            <h2 className="secure-title text-2xl font-bold">Dashboard</h2>
+            <p className="text-slate-400 mt-1">Internal Messaging & Calling Software</p>
+          </div>
+          <button
+            onClick={() => router.push('/settings')}
+            className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-500/20 transition"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317a1 1 0 011.35-.936l1.122.449a1 1 0 00.74 0l1.122-.449a1 1 0 011.35.936l.09 1.204a1 1 0 00.5.82l1.03.59a1 1 0 01.366 1.366l-.59 1.03a1 1 0 000 .74l.59 1.03a1 1 0 01-.366 1.366l-1.03.59a1 1 0 00-.5.82l-.09 1.204a1 1 0 01-1.35.936l-1.122-.449a1 1 0 00-.74 0l-1.122.449a1 1 0 01-1.35-.936l-.09-1.204a1 1 0 00-.5-.82l-1.03-.59a1 1 0 01-.366-1.366l.59-1.03a1 1 0 000-.74l-.59-1.03a1 1 0 01.366-1.366l1.03-.59a1 1 0 00.5-.82l.09-1.204z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+            </svg>
+            Settings
+          </button>
         </div>
 
         <div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <div className="secure-panel p-6">
+            <div
+              className="secure-panel p-6 cursor-pointer hover:-translate-y-0.5 transition duration-200"
+              onClick={() => router.push('/contacts')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  router.push('/contacts');
+                }
+              }}
+            >
               <div className="flex items-center">
                 <div className="flex-shrink-0 bg-cyan-500/20 rounded-xl p-3 border border-cyan-300/20">
                   <svg className="w-6 h-6 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,7 +279,17 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="secure-panel p-6">
+            <div
+              className="secure-panel p-6 cursor-pointer hover:-translate-y-0.5 transition duration-200"
+              onClick={() => router.push('/messages')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  router.push('/messages');
+                }
+              }}
+            >
               <div className="flex items-center">
                 <div className="flex-shrink-0 bg-emerald-500/20 rounded-xl p-3 border border-emerald-300/20">
                   <svg className="w-6 h-6 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,7 +303,17 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="secure-panel p-6">
+            <div
+              className="secure-panel p-6 cursor-pointer hover:-translate-y-0.5 transition duration-200"
+              onClick={() => router.push('/groups')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  router.push('/groups');
+                }
+              }}
+            >
               <div className="flex items-center">
                 <div className="flex-shrink-0 bg-violet-500/20 rounded-xl p-3 border border-violet-300/20">
                   <svg className="w-6 h-6 text-violet-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,7 +327,17 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="secure-panel p-6">
+            <div
+              className="secure-panel p-6 cursor-pointer hover:-translate-y-0.5 transition duration-200"
+              onClick={() => router.push('/calls')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  router.push('/calls');
+                }
+              }}
+            >
               <div className="flex items-center">
                 <div className="flex-shrink-0 bg-sky-500/20 rounded-xl p-3 border border-sky-300/20">
                   <svg className="w-6 h-6 text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -299,7 +362,7 @@ export default function Dashboard() {
                 <h2 className="text-lg font-semibold ml-3 text-slate-100">Messages</h2>
               </div>
               <p className="text-slate-400 mb-4">Secure end-to-end encrypted messaging</p>
-              <button className="secure-btn w-full">
+              <button className="secure-btn w-full" onClick={() => router.push('/messages')}>
                 Open Messages
               </button>
             </div>
@@ -312,7 +375,7 @@ export default function Dashboard() {
                 <h2 className="text-lg font-semibold ml-3 text-slate-100">Voice & Video Calls</h2>
               </div>
               <p className="text-slate-400 mb-4">Make encrypted voice and video calls</p>
-              <button className="secure-btn w-full">
+              <button className="secure-btn w-full" onClick={() => router.push('/calls')}>
                 View Calls
               </button>
             </div>
@@ -325,14 +388,24 @@ export default function Dashboard() {
                 <h2 className="text-lg font-semibold ml-3 text-slate-100">Contacts</h2>
               </div>
               <p className="text-slate-400 mb-4">Manage your secure contacts</p>
-              <button className="secure-btn w-full">
+              <button className="secure-btn w-full" onClick={() => router.push('/contacts')}>
                 View Contacts
               </button>
             </div>
           </div>
 
           {isAdmin && (
-            <div className="secure-panel p-6 text-white bg-gradient-to-r from-cyan-600/40 to-teal-600/30">
+            <div
+              className="secure-panel p-6 text-white bg-gradient-to-r from-cyan-600/40 to-teal-600/30 cursor-pointer hover:-translate-y-0.5 transition duration-200"
+              onClick={() => router.push('/admin')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  router.push('/admin');
+                }
+              }}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-bold mb-2">Admin Panel</h3>

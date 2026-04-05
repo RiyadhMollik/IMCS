@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/AuthContext';
+import ThemeToggle from '@/components/ThemeToggle';
 import api from '@/lib/api';
 
 interface Stats {
@@ -241,16 +242,19 @@ export default function Dashboard() {
             <h2 className="secure-title text-2xl font-bold">Dashboard</h2>
             <p className="text-slate-400 mt-1">Internal Messaging & Calling Software</p>
           </div>
-          <button
-            onClick={() => router.push('/settings')}
-            className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-500/20 transition"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317a1 1 0 011.35-.936l1.122.449a1 1 0 00.74 0l1.122-.449a1 1 0 011.35.936l.09 1.204a1 1 0 00.5.82l1.03.59a1 1 0 01.366 1.366l-.59 1.03a1 1 0 000 .74l.59 1.03a1 1 0 01-.366 1.366l-1.03.59a1 1 0 00-.5.82l-.09 1.204a1 1 0 01-1.35.936l-1.122-.449a1 1 0 00-.74 0l-1.122.449a1 1 0 01-1.35-.936l-.09-1.204a1 1 0 00-.5-.82l-1.03-.59a1 1 0 01-.366-1.366l.59-1.03a1 1 0 000-.74l-.59-1.03a1 1 0 01.366-1.366l1.03-.59a1 1 0 00.5-.82l.09-1.204z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-            </svg>
-            Settings
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle placement="inline" />
+            <button
+              onClick={() => router.push('/settings')}
+              className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-500/20 transition"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317a1 1 0 011.35-.936l1.122.449a1 1 0 00.74 0l1.122-.449a1 1 0 011.35.936l.09 1.204a1 1 0 00.5.82l1.03.59a1 1 0 01.366 1.366l-.59 1.03a1 1 0 000 .74l.59 1.03a1 1 0 01-.366 1.366l-1.03.59a1 1 0 00-.5.82l-.09 1.204a1 1 0 01-1.35.936l-1.122-.449a1 1 0 00-.74 0l-1.122.449a1 1 0 01-1.35-.936l-.09-1.204a1 1 0 00-.5-.82l-1.03-.59a1 1 0 01-.366-1.366l.59-1.03a1 1 0 000-.74l-.59-1.03a1 1 0 01.366-1.366l1.03-.59a1 1 0 00.5-.82l.09-1.204z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+              </svg>
+              Settings
+            </button>
+          </div>
         </div>
 
         <div>

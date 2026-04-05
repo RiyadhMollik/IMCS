@@ -9,6 +9,7 @@ import { useWebRTC } from '@/hooks/useWebRTC';
 import Cookies from 'js-cookie';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useOnlineUsers } from '@/hooks/useOnlineUsers';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface User {
   id: number;
@@ -2685,11 +2686,11 @@ export default function MessagesPage() {
     : 'Call';
 
   return (
-    <div className="secure-screen bg-[#030818]">
+    <div className="secure-screen">
       <main className="h-screen p-0">
-        <div className="h-full border border-cyan-900/30 bg-[#02071a] overflow-hidden">
+        <div className="h-full border border-cyan-300/20 bg-[var(--secure-surface-strong)] overflow-hidden">
           <div className="flex h-full">
-            <aside className="w-[58px] border-r border-cyan-900/40 bg-[#020b21] flex flex-col items-center justify-between py-3">
+            <aside className="w-[58px] border-r border-cyan-300/20 bg-cyan-500/5 flex flex-col items-center justify-between py-3">
               <div className="w-full flex flex-col items-center gap-3">
                 <div className="w-9 h-9 rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-200 flex items-center justify-center text-[11px] font-semibold">
                   {user.username.slice(0, 2).toUpperCase()}
@@ -2733,6 +2734,7 @@ export default function MessagesPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M9 21V10m6 11V10M5 10l7-7 7 7" />
                   </svg>
                 </button>
+                <ThemeToggle placement="sidebar" />
                 <button
                   onClick={logout}
                   className="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-400/30 text-rose-200 hover:bg-rose-500/25 transition flex items-center justify-center"
@@ -2746,8 +2748,8 @@ export default function MessagesPage() {
             </aside>
 
             {/* Users List */}
-            <div className="w-[290px] min-w-[270px] border-r border-cyan-900/40 overflow-y-auto bg-[#03102a]">
-              <div className="p-4 border-b border-cyan-200/15 bg-[#0a172d]/80 backdrop-blur-sm">
+            <div className="w-[290px] min-w-[270px] border-r border-cyan-300/20 overflow-y-auto bg-cyan-500/5">
+              <div className="p-4 border-b border-cyan-200/15 bg-cyan-500/5 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-bold tracking-tight text-slate-100">Messages</h2>
@@ -2768,7 +2770,7 @@ export default function MessagesPage() {
                   <input
                     type="text"
                     placeholder="Search contacts..."
-                    className="w-full h-9 rounded-xl border border-cyan-600/25 bg-[#091a38] px-3 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                    className="w-full h-9 rounded-xl border border-cyan-300/30 bg-[var(--secure-input-bg)] px-3 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                   />
                 </div>
                 <div className="flex items-center justify-between mt-2">
@@ -2914,11 +2916,11 @@ export default function MessagesPage() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col bg-[#010918]">
+            <div className="flex-1 flex flex-col bg-cyan-500/5">
               {selectedUserWithStatus || selectedGroupConversationId ? (
                 <>
                   {/* Chat Header */}
-                  <div className="p-4 border-b border-cyan-200/15 bg-[#0b1930]/80 backdrop-blur-sm flex items-center justify-between">
+                  <div className="p-4 border-b border-cyan-200/15 bg-cyan-500/10 backdrop-blur-sm flex items-center justify-between">
                     {selectedGroupConversationId ? (
                       <div className="flex items-center justify-between w-full">
                         <div>
@@ -3083,7 +3085,7 @@ export default function MessagesPage() {
                     ) : null}
                   </div>
 
-                  <div className="px-4 py-1.5 text-[11px] uppercase tracking-[0.15em] text-slate-500 border-b border-cyan-900/30 bg-[#071226]">
+                  <div className="px-4 py-1.5 text-[11px] uppercase tracking-[0.15em] text-slate-500 border-b border-cyan-300/20 bg-cyan-500/5">
                     End-to-end encrypted · AES-256 / ECC-521
                   </div>
 
@@ -3142,11 +3144,11 @@ export default function MessagesPage() {
                       </div>
 
                       {/* Messages */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[linear-gradient(180deg,_rgba(8,18,36,0.75)_0%,_rgba(10,22,42,0.95)_100%)]">
+                      <div className="messages-thread-bg flex-1 overflow-y-auto p-4 space-y-4">
                         {loadingMessages ? (
                           <div className="text-center text-slate-400">Loading messages...</div>
                         ) : timelineItems.length === 0 ? (
-                          <div className="text-center text-slate-400">No messages yet. Start the conversation!</div>
+                          <div className="text-center text-slate-300 font-medium">No messages yet. Start the conversation!</div>
                         ) : (
                           timelineItems.map((timelineItem, index) => {
                             if (timelineItem.kind === 'call') {

@@ -283,6 +283,14 @@ body {
       linear-gradient(90deg, var(--secure-grid-line) 1px, transparent 1px);
     background-size: 34px 34px;
   }
+
+  .messages-thread-bg {
+    background: linear-gradient(180deg, rgba(8, 18, 36, 0.75) 0%, rgba(10, 22, 42, 0.95) 100%);
+  }
+
+  html[data-theme='light'] .messages-thread-bg {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(241, 245, 249, 0.96) 100%);
+  }
 }
 
 @keyframes bounce-slow {

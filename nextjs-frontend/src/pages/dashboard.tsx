@@ -171,7 +171,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="secure-screen secure-grid-bg lg:flex">
+    <div className="secure-screen secure-grid-bg dashboard-screen lg:flex">
       <aside className="w-full lg:w-72 lg:min-h-screen lg:border-r border-cyan-300/15 bg-[#060d1b]/85 backdrop-blur-xl">
         <div className="p-5 border-b border-cyan-300/15">
           <div className="flex items-center gap-3">

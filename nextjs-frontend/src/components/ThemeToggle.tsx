@@ -67,7 +67,7 @@ export default function ThemeToggle({ placement = 'floating' }: ThemeToggleProps
       onClick={toggleTheme}
       aria-label={isLight ? 'Switch to dark theme' : 'Switch to light theme'}
       title={isLight ? 'Switch to dark theme' : 'Switch to light theme'}
-      className="fixed z-[100] group top-6 right-5"
+      className="fixed z-[100] group top-6 right-5 hidden md:block"
     >
       <div className="relative w-14 h-8 sm:w-16 sm:h-9 rounded-full border border-cyan-300/40 bg-gradient-to-r from-slate-800 to-slate-700 shadow-[0_8px_28px_rgba(8,47,73,0.35)] transition-all duration-300 group-hover:scale-105 data-[light=true]:from-sky-100 data-[light=true]:to-cyan-50 data-[light=true]:border-cyan-500/40" data-light={isLight}>
         <div className={`absolute top-1 h-6 w-6 sm:h-7 sm:w-7 rounded-full transition-all duration-300 ${

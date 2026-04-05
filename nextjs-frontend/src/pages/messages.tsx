@@ -2685,12 +2685,14 @@ export default function MessagesPage() {
       }`
     : 'Call';
 
+  const hasActiveConversation = Boolean(selectedUserWithStatus || selectedGroupConversationId);
+
   return (
-    <div className="secure-screen">
+    <div className="secure-screen messages-screen">
       <main className="h-screen p-0">
         <div className="h-full border border-cyan-300/20 bg-[var(--secure-surface-strong)] overflow-hidden">
           <div className="flex h-full">
-            <aside className="w-[58px] border-r border-cyan-300/20 bg-cyan-500/5 flex flex-col items-center justify-between py-3">
+            <aside className="hidden md:flex w-[58px] border-r border-cyan-300/20 bg-cyan-500/5 flex-col items-center justify-between py-3">
               <div className="w-full flex flex-col items-center gap-3">
                 <div className="w-9 h-9 rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-200 flex items-center justify-center text-[11px] font-semibold">
                   {user.username.slice(0, 2).toUpperCase()}
@@ -2748,7 +2750,7 @@ export default function MessagesPage() {
             </aside>
 
             {/* Users List */}
-            <div className="w-[290px] min-w-[270px] border-r border-cyan-300/20 overflow-y-auto bg-cyan-500/5">
+            <div className={`messages-list-pane w-full md:w-[290px] md:min-w-[270px] border-r border-cyan-300/20 overflow-y-auto bg-cyan-500/5 ${hasActiveConversation ? 'hidden md:block' : 'block'}`}>
               <div className="p-4 border-b border-cyan-200/15 bg-cyan-500/5 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -2916,18 +2918,34 @@ export default function MessagesPage() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col bg-cyan-500/5">
+            <div className={`messages-chat-pane flex-1 flex flex-col bg-cyan-500/5 ${hasActiveConversation ? 'flex' : 'hidden md:flex'}`}>
               {selectedUserWithStatus || selectedGroupConversationId ? (
                 <>
                   {/* Chat Header */}
                   <div className="p-4 border-b border-cyan-200/15 bg-cyan-500/10 backdrop-blur-sm flex items-center justify-between">
                     {selectedGroupConversationId ? (
-                      <div className="flex items-center justify-between w-full">
-                        <div>
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <button
+                            onClick={() => {
+                              setSelectedUser(null);
+                              setSelectedDirectConversationId(null);
+                              setSelectedGroupConversationId(null);
+                              setSelectedGroupName('');
+                            }}
+                            className="md:hidden p-2 rounded-lg border border-cyan-300/20 bg-cyan-500/10 text-cyan-100"
+                            title="Back to chats"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                          </button>
+                          <div className="min-w-0">
                           <h3 className="font-semibold text-slate-100">{selectedGroupName || 'Group Chat'}</h3>
                           <p className="text-sm text-slate-400">Group conversation</p>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="messages-header-actions flex items-center space-x-2">
                           <button
                             onClick={toggleConversationPin}
                             className="p-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 rounded"
@@ -3015,6 +3033,20 @@ export default function MessagesPage() {
                     ) : selectedUserWithStatus ? (
                       <>
                         <div className="flex items-center space-x-3">
+                          <button
+                            onClick={() => {
+                              setSelectedUser(null);
+                              setSelectedDirectConversationId(null);
+                              setSelectedGroupConversationId(null);
+                              setSelectedGroupName('');
+                            }}
+                            className="md:hidden p-2 rounded-lg border border-cyan-300/20 bg-cyan-500/10 text-cyan-100"
+                            title="Back to chats"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                          </button>
                           <div className="relative">
                             <div className="w-10 h-10 bg-cyan-700/70 rounded-full flex items-center justify-center text-white font-bold">
                               {selectedUserWithStatus.username.charAt(0).toUpperCase()}
@@ -3032,7 +3064,7 @@ export default function MessagesPage() {
                         </div>
 
                         {/* Call Buttons */}
-                        <div className="flex items-center space-x-2">
+                        <div className="messages-header-actions flex items-center space-x-2">
                           <button
                             onClick={toggleConversationPin}
                             className="p-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 rounded"
@@ -3186,7 +3218,7 @@ export default function MessagesPage() {
                             const isPollMessage = !!message.poll;
                             return (
                               <div key={`message-${message.id}-${index}`} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-2' : 'order-1'}`}>
+                                <div className={`max-w-[85vw] sm:max-w-xs lg:max-w-md ${isOwn ? 'order-2' : 'order-1'}`}>
                                   <div
                                     className={`px-4 py-2.5 rounded-2xl shadow-sm border ${
                                       isOwn
@@ -3221,7 +3253,7 @@ export default function MessagesPage() {
                                     ) : (
                                       <div className="space-y-2">
                                         {isPollMessage ? (
-                                          <div className="min-w-[280px]">
+                                          <div className="min-w-0 w-full sm:min-w-[280px]">
                                             <div className="flex items-start justify-between gap-2 mb-3">
                                               <p className="font-semibold text-base">{message.poll?.question}</p>
                                               <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">

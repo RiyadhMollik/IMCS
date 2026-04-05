@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -14,16 +15,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      const otpVerified = typeof window !== 'undefined' && sessionStorage.getItem('dummy_otp_verified') === '1';
-      const fingerprintVerified = typeof window !== 'undefined' && sessionStorage.getItem('dummy_fingerprint_verified') === '1';
-
-      if (!otpVerified) {
-        router.push('/auth/otp');
-      } else if (!fingerprintVerified) {
-        router.push('/auth/fingerprint');
-      } else {
-        router.push('/dashboard');
-      }
+      router.push('/dashboard');
     }
   }, [isAuthenticated, router]);
 
@@ -43,91 +35,93 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="secure-screen flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-[1040px]">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-8 items-center">
-          <section className="hidden lg:block pl-2">
-            <h1 className="secure-title text-6xl leading-[0.96] font-bold">IMCS</h1>
-            <p className="text-slate-300 text-2xl mt-4 max-w-md">Internal Messaging & Calling Software</p>
-            <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-500/10 px-4 py-2 text-xs uppercase tracking-[0.16em] text-cyan-200">
-              <span className="w-2 h-2 rounded-full bg-cyan-300 animate-pulse" />
-              Secure Node Active
-            </div>
-          </section>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#6d3fe5] via-[#a24fc8] to-[#2ab2e5] p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-7 sm:p-8 w-full max-w-[380px]">
+        <div className="text-center mb-6">
+          <div className="mx-auto mb-4 h-12 w-12 rounded-xl bg-[#1fb5e8] flex items-center justify-center">
+            <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
+            </svg>
+          </div>
+          <h1 className="text-[38px] leading-none font-bold text-slate-900 mb-2">Welcome Back</h1>
+          <p className="text-[26px] text-slate-500">Sign in to IMCS secure messaging</p>
+        </div>
 
-          <section className="secure-panel p-8 sm:p-10 relative overflow-hidden">
-            <div className="absolute -right-14 -top-14 w-40 h-40 rounded-full bg-cyan-500/10 blur-2xl" />
-            <div className="absolute -left-16 -bottom-16 w-44 h-44 rounded-full bg-teal-500/10 blur-2xl" />
+        {error && (
+          <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+            {error}
+          </div>
+        )}
 
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="username" className="block text-sm font-semibold text-slate-800 mb-2">
+              Username
+            </label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26afe0] focus:border-transparent outline-none transition"
+              placeholder="Enter your username"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-semibold text-slate-800 mb-2">
+              Password
+            </label>
             <div className="relative">
-              <div className="mb-8">
-                <div className="inline-flex items-center rounded-md border border-cyan-300/25 bg-cyan-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan-200">
-                  Classified System
-                </div>
-                <h2 className="secure-title text-3xl font-bold mt-4">Operator Access</h2>
-                <p className="text-slate-400 mt-1">Authorized personnel only</p>
-              </div>
-
-              {error && (
-                <div className="rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-rose-200 mb-6">
-                  {error}
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label htmlFor="username" className="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-[0.14em]">
-                    Operator ID
-                  </label>
-                  <input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                    className="secure-input"
-                    placeholder="Enter operator ID"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="password" className="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-[0.14em]">
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="secure-input"
-                    placeholder="Enter password"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="secure-btn w-full py-3 text-base"
-                >
-                  {loading ? 'Signing in...' : 'Continue'}
-                </button>
-              </form>
-
-              <div className="mt-6 text-center">
-                <p className="text-slate-400 text-sm">
-                  Don't have an account?{' '}
-                  <Link href="/register" className="text-cyan-300 hover:text-cyan-100 font-semibold transition">
-                    Sign up
-                  </Link>
-                </p>
-              </div>
-
-              <p className="mt-8 text-center text-[11px] uppercase tracking-[0.16em] text-slate-500">
-                Confidential - Authorized Personnel Only
-              </p>
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-3 pr-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26afe0] focus:border-transparent outline-none transition"
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-0 px-4 text-slate-500 hover:text-slate-700"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M3 3l18 18" />
+                    <path d="M10.6 10.6a2 2 0 102.8 2.8" />
+                    <path d="M9.9 5.1A10.9 10.9 0 0112 5c6 0 10 7 10 7a18.9 18.9 0 01-4 4.8" />
+                    <path d="M6.7 6.7A18.9 18.9 0 002 12s4 7 10 7a10.9 10.9 0 003.1-.5" />
+                  </svg>
+                ) : (
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
             </div>
-          </section>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#1fb5e8] text-white py-3 px-6 rounded-lg font-semibold text-base hover:bg-[#18a8da] transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-slate-500">
+            Don't have an account?{' '}
+            <Link href="/register" className="text-[#8e45e6] hover:text-[#7d3ed2] font-semibold">
+              Sign up
+            </Link>
+          </p>
         </div>
       </div>
     </div>

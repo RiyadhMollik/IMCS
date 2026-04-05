@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/AuthContext';
-import ThemeToggle from '@/components/ThemeToggle';
+import { useTheme } from '@/contexts/ThemeContext';
+import { NotificationBell } from '@/components/NotificationBell';
 import api from '@/lib/api';
 
 interface Stats {
@@ -21,6 +22,46 @@ interface CallHistoryItem {
   initiated_at: string;
 }
 
+const NAV_ITEMS = [
+  { label: 'Dashboard', path: '/dashboard' },
+  { label: 'Calls', path: '/calls' },
+  { label: 'Contacts', path: '/contacts' },
+  { label: 'Messages', path: '/messages' },
+];
+
+const RECENT_ACTIVITY = [
+  { initials: 'PH', name: 'Patrick Hendricks', action: 'sent you a message', time: '2 min ago', color: 'bg-orange-500' },
+  { initials: 'DB', name: 'Doris Brown', action: 'started a video call', time: '15 min ago', color: 'bg-pink-500' },
+  { initials: 'SO', name: 'SecureOps Team', action: 'shared a document', time: '1 hour ago', color: 'bg-blue-500' },
+  { initials: 'AR', name: 'Albert Rodarte', action: 'joined the network', time: '2 hours ago', color: 'bg-violet-500' },
+  { initials: 'SW', name: 'Steve Walker', action: 'updated their profile', time: '3 hours ago', color: 'bg-emerald-500' },
+];
+
+function ThemeToggleButton() {
+  const { theme, toggleTheme } = useTheme();
+
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      className="inline-flex items-center justify-center rounded-full p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 transition"
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+    >
+      {theme === 'dark' ? (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.2M12 18.8V21M5.64 5.64l1.56 1.56M16.8 16.8l1.56 1.56M3 12h2.2M18.8 12H21M5.64 18.36l1.56-1.56M16.8 7.2l1.56-1.56" />
+          <circle cx="12" cy="12" r="4" />
+        </svg>
+      ) : (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.8A8.5 8.5 0 1111.2 3a6.5 6.5 0 009.8 9.8z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 export default function Dashboard() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const router = useRouter();
@@ -28,403 +69,334 @@ export default function Dashboard() {
     totalContacts: 0,
     unreadMessages: 0,
     activeGroups: 0,
-    todayCalls: 0
+    todayCalls: 0,
   });
+
+  const isAdmin = user?.role === 'user_admin' || user?.role === 'system_admin';
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/login');
-      return;
-    }
-
-    if (!loading && isAuthenticated && typeof window !== 'undefined') {
-      const otpVerified = sessionStorage.getItem('dummy_otp_verified') === '1';
-      const fingerprintVerified = sessionStorage.getItem('dummy_fingerprint_verified') === '1';
-
-      if (!otpVerified) {
-        router.push('/auth/otp');
-      } else if (!fingerprintVerified) {
-        router.push('/auth/fingerprint');
-      }
     }
   }, [isAuthenticated, loading, router]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchStats();
-
-      const interval = setInterval(() => {
-        fetchStats();
-      }, 5000);
-
-      const handleVisibilityChange = () => {
-        if (document.visibilityState === 'visible') {
-          fetchStats();
-        }
-      };
-
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-
-      return () => {
-        clearInterval(interval);
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      };
+    if (!isAuthenticated) {
+      return undefined;
     }
-    return undefined;
+
+    const fetchStats = async () => {
+      try {
+        const [contactsResponse, unreadResponse, conversationsResponse, callsResponse] = await Promise.all([
+          api.get('/users/contacts/'),
+          api.get('/messages/unread_count/'),
+          api.get('/conversations/'),
+          api.get('/calls/history/'),
+        ]);
+
+        const contacts = contactsResponse.data.results || contactsResponse.data || [];
+        const conversations: ConversationSummary[] = conversationsResponse.data.results || conversationsResponse.data || [];
+        const calls: CallHistoryItem[] = callsResponse.data.results || callsResponse.data || [];
+        const unreadMessages = Number(unreadResponse.data?.count || 0);
+
+        const activeGroups = conversations.filter(
+          (conversation) => conversation.conversation_type === 'group'
+        ).length;
+
+        const today = new Date();
+        const todayCalls = calls.filter((call) => {
+          const callDate = new Date(call.initiated_at);
+          return (
+            callDate.getFullYear() === today.getFullYear() &&
+            callDate.getMonth() === today.getMonth() &&
+            callDate.getDate() === today.getDate()
+          );
+        }).length;
+
+        setStats({
+          totalContacts: Array.isArray(contacts) ? contacts.length : 0,
+          unreadMessages,
+          activeGroups,
+          todayCalls,
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+
+    fetchStats();
+
+    const interval = setInterval(fetchStats, 7000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchStats();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [isAuthenticated]);
 
-  const fetchStats = async () => {
-    try {
-      const [
-        contactsResponse,
-        unreadResponse,
-        conversationsResponse,
-        callsResponse,
-      ] = await Promise.all([
-        api.get('/users/contacts/'),
-        api.get('/messages/unread_count/'),
-        api.get('/conversations/'),
-        api.get('/calls/history/'),
-      ]);
-
-      const contacts = contactsResponse.data.results || contactsResponse.data || [];
-      const conversations: ConversationSummary[] = conversationsResponse.data.results || conversationsResponse.data || [];
-      const calls: CallHistoryItem[] = callsResponse.data.results || callsResponse.data || [];
-      const unreadMessages = Number(unreadResponse.data?.count || 0);
-
-      const activeGroups = conversations.filter(
-        (conversation) => conversation.conversation_type === 'group'
-      ).length;
-
-      const today = new Date();
-      const todayCalls = calls.filter((call) => {
-        const callDate = new Date(call.initiated_at);
-        return (
-          callDate.getFullYear() === today.getFullYear() &&
-          callDate.getMonth() === today.getMonth() &&
-          callDate.getDate() === today.getDate()
-        );
-      }).length;
-
-      setStats({
-        totalContacts: Array.isArray(contacts) ? contacts.length : 0,
-        unreadMessages,
-        activeGroups,
-        todayCalls,
-      });
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
+  const metrics = useMemo(
+    () => [
+      {
+        title: 'Total Contacts',
+        value: stats.totalContacts,
+        growth: '+12%',
+        iconBg: 'bg-sky-500',
+        icon: (
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.35-1.86M17 20H7m10 0v-2a5 5 0 00-10 0v2m10-9a3 3 0 10-6 0 3 3 0 006 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        ),
+      },
+      {
+        title: 'Messages Today',
+        value: stats.unreadMessages,
+        growth: '+24%',
+        iconBg: 'bg-violet-500',
+        icon: (
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.42-4.03 8-9 8-1.48 0-2.87-.31-4.12-.87L3 20l1.48-3.44A7.7 7.7 0 013 12c0-4.42 4.03-8 9-8s9 3.58 9 8z" />
+        ),
+      },
+      {
+        title: 'Active Groups',
+        value: stats.activeGroups,
+        growth: '+8%',
+        iconBg: 'bg-emerald-500',
+        icon: (
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.35-1.86M17 20H7m10 0v-2a5 5 0 00-10 0v2m8-9a3 3 0 11-6 0 3 3 0 016 0z" />
+        ),
+      },
+      {
+        title: 'Calls Today',
+        value: stats.todayCalls,
+        growth: '+18%',
+        iconBg: 'bg-gradient-to-br from-violet-500 to-sky-500',
+        icon: (
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.95.68l1.5 4.5a1 1 0 01-.5 1.2l-2.26 1.13a11.04 11.04 0 005.52 5.52l1.13-2.26a1 1 0 011.2-.5l4.5 1.5a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.72 21 3 14.28 3 6V5z" />
+        ),
+      },
+    ],
+    [stats]
+  );
 
   if (loading) {
-    return <div className="secure-screen flex items-center justify-center text-slate-300">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-slate-600 dark:text-slate-300">Loading...</div>;
   }
 
   if (!isAuthenticated) {
     return null;
   }
 
-  const isAdmin = user?.role === 'user_admin' || user?.role === 'system_admin';
-  const navItems = [
-    {
-      label: 'Messages',
-      description: 'Encrypted chat',
-      onClick: () => router.push('/messages'),
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Calls',
-      description: 'Voice and video',
-      onClick: () => router.push('/calls'),
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Contacts',
-      description: 'Trusted people',
-      onClick: () => router.push('/contacts'),
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Settings',
-      description: 'Preferences and security',
-      onClick: () => router.push('/settings'),
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317a1 1 0 011.35-.936l1.122.449a1 1 0 00.74 0l1.122-.449a1 1 0 011.35.936l.09 1.204a1 1 0 00.5.82l1.03.59a1 1 0 01.366 1.366l-.59 1.03a1 1 0 000 .74l.59 1.03a1 1 0 01-.366 1.366l-1.03.59a1 1 0 00-.5.82l-.09 1.204a1 1 0 01-1.35.936l-1.122-.449a1 1 0 00-.74 0l-1.122.449a1 1 0 01-1.35-.936l-.09-1.204a1 1 0 00-.5-.82l-1.03-.59a1 1 0 01-.366-1.366l.59-1.03a1 1 0 000-.74l-.59-1.03a1 1 0 01.366-1.366l1.03-.59a1 1 0 00.5-.82l.09-1.204z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-        </svg>
-      ),
-    },
-  ];
-
   return (
-    <div className="secure-screen secure-grid-bg dashboard-screen lg:flex">
-      <aside className="w-full lg:w-72 lg:min-h-screen lg:border-r border-cyan-300/15 bg-[#060d1b]/85 backdrop-blur-xl">
-        <div className="p-5 border-b border-cyan-300/15">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-300/25 flex items-center justify-center text-cyan-200">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#050816] dark:text-slate-100 transition-colors">
+      <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-[#0c1326]/90">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="text-2xl font-extrabold tracking-tight text-sky-500"
+            >
+              IMCS
+            </button>
+
+            <nav className="hidden md:flex items-center gap-1">
+              {NAV_ITEMS.map((item) => {
+                const active = router.pathname === item.path;
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => router.push(item.path)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-semibold transition ${
+                      active
+                        ? 'bg-sky-500 text-white'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggleButton />
+            <NotificationBell />
+
+            <div className="hidden sm:flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-200 flex items-center justify-center text-xs font-bold">
+                {(user?.username || 'U').charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{user?.username}</span>
+            </div>
+
+            <button
+              onClick={logout}
+              className="inline-flex items-center gap-2 bg-red-500 text-white px-3 py-1.5 rounded-xl text-sm font-semibold hover:bg-red-600 transition"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h8a2 2 0 002-2v-2" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 5V3a2 2 0 00-2-2H3" />
               </svg>
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6 sm:py-7">
+        <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-1">Welcome back, {user?.username}</h1>
+            <p className="text-slate-500 dark:text-slate-400">Your secure communication hub, all systems operational.</p>
+          </div>
+          <div className="inline-flex items-center self-start px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold dark:bg-emerald-900/30 dark:text-emerald-300">
+            <span className="mr-2 h-2 w-2 rounded-full bg-emerald-500" />
+            All Systems Secure
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
+          {metrics.map((metric) => (
+            <article
+              key={metric.title}
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className={`h-10 w-10 rounded-xl ${metric.iconBg} text-white flex items-center justify-center`}>
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    {metric.icon}
+                  </svg>
+                </div>
+                <span className="text-sm font-semibold text-emerald-500">{metric.growth}</span>
+              </div>
+              <div className="text-4xl font-bold leading-none mb-2">{metric.value}</div>
+              <p className="text-slate-500 dark:text-slate-400">{metric.title}</p>
+            </article>
+          ))}
+        </section>
+
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+          <article className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden dark:border-slate-800 dark:bg-slate-900/60">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="text-2xl font-bold">Recent Activity</h2>
+              <button className="text-sm font-semibold text-sky-500 hover:text-sky-600">View All</button>
             </div>
             <div>
-              <h1 className="text-lg font-bold secure-title">IMCS</h1>
-              <p className="secure-subtitle uppercase tracking-[0.14em]">Control Node</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-5 border-b border-cyan-300/15">
-          <p className="text-xs text-slate-500 uppercase tracking-[0.2em] mb-3">Operator</p>
-          <div className="secure-panel-soft p-3">
-            <p className="text-sm font-semibold text-slate-100">{user?.username}</p>
-            <p className="text-xs text-slate-400 mt-1">{user?.role?.replace('_', ' ').toUpperCase()}</p>
-          </div>
-        </div>
-
-        <nav className="p-5 space-y-3">
-          <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">Navigation</p>
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={item.onClick}
-              className="w-full flex items-center gap-3 rounded-xl border border-cyan-300/15 bg-cyan-500/5 px-3 py-3 text-left text-slate-200 hover:bg-cyan-500/15 hover:border-cyan-300/30 transition"
-            >
-              <span className="text-cyan-200">{item.icon}</span>
-              <span>
-                <span className="block text-sm font-semibold">{item.label}</span>
-                <span className="block text-xs text-slate-400">{item.description}</span>
-              </span>
-            </button>
-          ))}
-          {isAdmin && (
-            <button
-              onClick={() => router.push('/admin')}
-              className="w-full flex items-center gap-3 rounded-xl border border-amber-300/25 bg-amber-500/10 px-3 py-3 text-left text-amber-100 hover:bg-amber-500/20 transition"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0a1 1 0 00.95.69h.969c.969 0 1.371 1.24.588 1.81l-.784.57a1 1 0 00-.364 1.118l.3.922c.3.922-.755 1.688-1.54 1.118l-.784-.57a1 1 0 00-1.176 0l-.784.57c-.784.57-1.838-.196-1.539-1.118l.3-.922a1 1 0 00-.364-1.118l-.784-.57c-.783-.57-.38-1.81.588-1.81h.969a1 1 0 00.95-.69zM12 14v7m-4-4h8" />
-              </svg>
-              <span>
-                <span className="block text-sm font-semibold">Admin</span>
-                <span className="block text-xs text-amber-200/80">System controls</span>
-              </span>
-            </button>
-          )}
-        </nav>
-
-        <div className="px-5 pb-6 lg:mt-auto">
-          <button
-            onClick={logout}
-            className="w-full rounded-xl border border-rose-300/40 bg-rose-500/20 px-4 py-2 text-rose-100 hover:bg-rose-500/30 transition"
-          >
-            Logout
-          </button>
-        </div>
-      </aside>
-
-      <main className="flex-1 w-full py-6 px-4 sm:px-6 lg:px-8">
-        <div className="mb-6 flex items-start justify-between gap-3">
-          <div>
-            <h2 className="secure-title text-2xl font-bold">Dashboard</h2>
-            <p className="text-slate-400 mt-1">Internal Messaging & Calling Software</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle placement="inline" />
-            <button
-              onClick={() => router.push('/settings')}
-              className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-500/20 transition"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317a1 1 0 011.35-.936l1.122.449a1 1 0 00.74 0l1.122-.449a1 1 0 011.35.936l.09 1.204a1 1 0 00.5.82l1.03.59a1 1 0 01.366 1.366l-.59 1.03a1 1 0 000 .74l.59 1.03a1 1 0 01-.366 1.366l-1.03.59a1 1 0 00-.5.82l-.09 1.204a1 1 0 01-1.35.936l-1.122-.449a1 1 0 00-.74 0l-1.122.449a1 1 0 01-1.35-.936l-.09-1.204a1 1 0 00-.5-.82l-1.03-.59a1 1 0 01-.366-1.366l.59-1.03a1 1 0 000-.74l-.59-1.03a1 1 0 01.366-1.366l1.03-.59a1 1 0 00.5-.82l.09-1.204z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-              </svg>
-              Settings
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <div
-              className="secure-panel p-6 cursor-pointer hover:-translate-y-0.5 transition duration-200"
-              onClick={() => router.push('/contacts')}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  router.push('/contacts');
-                }
-              }}
-            >
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-cyan-500/20 rounded-xl p-3 border border-cyan-300/20">
-                  <svg className="w-6 h-6 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
+              {RECENT_ACTIVITY.map((entry) => (
+                <div key={`${entry.name}-${entry.time}`} className="flex items-center gap-4 px-5 py-4 border-b border-slate-100 last:border-b-0 dark:border-slate-800/80">
+                  <div className={`h-9 w-9 rounded-full ${entry.color} text-white flex items-center justify-center text-xs font-bold`}>
+                    {entry.initials}
+                  </div>
+                  <div>
+                    <p className="text-base">
+                      <span className="font-bold">{entry.name}</span>
+                      <span className="text-slate-500 dark:text-slate-400"> {entry.action}</span>
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-500">{entry.time}</p>
+                  </div>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-400">Contacts</p>
-                  <p className="text-2xl font-semibold text-slate-100">{stats.totalContacts}</p>
-                </div>
-              </div>
+              ))}
             </div>
+          </article>
 
-            <div
-              className="secure-panel p-6 cursor-pointer hover:-translate-y-0.5 transition duration-200"
-              onClick={() => router.push('/messages')}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  router.push('/messages');
-                }
-              }}
-            >
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-emerald-500/20 rounded-xl p-3 border border-emerald-300/20">
-                  <svg className="w-6 h-6 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                  </svg>
+          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+            <h2 className="text-2xl font-bold mb-4">Security Status</h2>
+            <ul className="space-y-4">
+              <li className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-xl bg-sky-100 dark:bg-slate-800 text-sky-500 flex items-center justify-center">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" /></svg>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-400">Unread Messages</p>
-                  <p className="text-2xl font-semibold text-slate-100">{stats.unreadMessages}</p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className="secure-panel p-6 cursor-pointer hover:-translate-y-0.5 transition duration-200"
-              onClick={() => router.push('/groups')}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  router.push('/groups');
-                }
-              }}
-            >
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-violet-500/20 rounded-xl p-3 border border-violet-300/20">
-                  <svg className="w-6 h-6 text-violet-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-400">Active Groups</p>
-                  <p className="text-2xl font-semibold text-slate-100">{stats.activeGroups}</p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className="secure-panel p-6 cursor-pointer hover:-translate-y-0.5 transition duration-200"
-              onClick={() => router.push('/calls')}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  router.push('/calls');
-                }
-              }}
-            >
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-sky-500/20 rounded-xl p-3 border border-sky-300/20">
-                  <svg className="w-6 h-6 text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-400">Today's Calls</p>
-                  <p className="text-2xl font-semibold text-slate-100">{stats.todayCalls}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="secure-panel p-6 hover:-translate-y-0.5 transition duration-200 cursor-pointer" onClick={() => router.push('/messages')}>
-              <div className="flex items-center mb-4">
-                <svg className="w-8 h-8 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                <h2 className="text-lg font-semibold ml-3 text-slate-100">Messages</h2>
-              </div>
-              <p className="text-slate-400 mb-4">Secure end-to-end encrypted messaging</p>
-              <button className="secure-btn w-full" onClick={() => router.push('/messages')}>
-                Open Messages
-              </button>
-            </div>
-
-            <div className="secure-panel p-6 hover:-translate-y-0.5 transition duration-200 cursor-pointer" onClick={() => router.push('/calls')}>
-              <div className="flex items-center mb-4">
-                <svg className="w-8 h-8 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                <h2 className="text-lg font-semibold ml-3 text-slate-100">Voice & Video Calls</h2>
-              </div>
-              <p className="text-slate-400 mb-4">Make encrypted voice and video calls</p>
-              <button className="secure-btn w-full" onClick={() => router.push('/calls')}>
-                View Calls
-              </button>
-            </div>
-
-            <div className="secure-panel p-6 hover:-translate-y-0.5 transition duration-200 cursor-pointer" onClick={() => router.push('/contacts')}>
-              <div className="flex items-center mb-4">
-                <svg className="w-8 h-8 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <h2 className="text-lg font-semibold ml-3 text-slate-100">Contacts</h2>
-              </div>
-              <p className="text-slate-400 mb-4">Manage your secure contacts</p>
-              <button className="secure-btn w-full" onClick={() => router.push('/contacts')}>
-                View Contacts
-              </button>
-            </div>
-          </div>
-
-          {isAdmin && (
-            <div
-              className="secure-panel p-6 text-white bg-gradient-to-r from-cyan-600/40 to-teal-600/30 cursor-pointer hover:-translate-y-0.5 transition duration-200"
-              onClick={() => router.push('/admin')}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  router.push('/admin');
-                }
-              }}
-            >
-              <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold mb-2">Admin Panel</h3>
-                  <p className="text-cyan-50/80">Manage users, permissions, and system settings</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Encryption Status</p>
+                  <p className="font-bold">AES-256 Active</p>
                 </div>
-                <button
-                  onClick={() => router.push('/admin')}
-                  className="secure-btn-secondary px-6 py-3 font-semibold"
-                >
-                  Open Admin Panel
-                </button>
-              </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-xl bg-sky-100 dark:bg-slate-800 text-sky-500 flex items-center justify-center">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.35-1.86M17 20H7m10 0v-2a5 5 0 00-10 0v2" /></svg>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Active Sessions</p>
+                  <p className="font-bold">2 Devices</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-xl bg-sky-100 dark:bg-slate-800 text-sky-500 flex items-center justify-center">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Uptime</p>
+                  <p className="font-bold">99.97%</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-xl bg-sky-100 dark:bg-slate-800 text-sky-500 flex items-center justify-center">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3M12 3a9 9 0 100 18 9 9 0 000-18z" /></svg>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Last Backup</p>
+                  <p className="font-bold">2 min ago</p>
+                </div>
+              </li>
+            </ul>
+          </article>
+        </section>
+
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+          <button
+            onClick={() => router.push('/messages')}
+            className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm hover:shadow-md transition dark:border-slate-800 dark:bg-slate-900/60"
+          >
+            <div className="h-10 w-10 rounded-xl bg-sky-500 text-white flex items-center justify-center mb-4">
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.42-4.03 8-9 8-1.48 0-2.87-.31-4.12-.87L3 20l1.48-3.44A7.7 7.7 0 013 12c0-4.42 4.03-8 9-8s9 3.58 9 8z" /></svg>
             </div>
-          )}
-        </div>
+            <h3 className="text-3xl font-bold mb-1">Messages</h3>
+            <p className="text-slate-500 dark:text-slate-400">End-to-end encrypted messaging with ephemeral messages.</p>
+          </button>
+
+          <button
+            onClick={() => router.push('/calls')}
+            className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm hover:shadow-md transition dark:border-slate-800 dark:bg-slate-900/60"
+          >
+            <div className="h-10 w-10 rounded-xl bg-violet-500 text-white flex items-center justify-center mb-4">
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.95.68l1.5 4.5a1 1 0 01-.5 1.2l-2.26 1.13a11.04 11.04 0 005.52 5.52l1.13-2.26a1 1 0 011.2-.5l4.5 1.5a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.72 21 3 14.28 3 6V5z" /></svg>
+            </div>
+            <h3 className="text-3xl font-bold mb-1">Voice and Video</h3>
+            <p className="text-slate-500 dark:text-slate-400">Encrypted calls with conference support and screen sharing.</p>
+          </button>
+
+          <button
+            onClick={() => router.push('/contacts')}
+            className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm hover:shadow-md transition dark:border-slate-800 dark:bg-slate-900/60"
+          >
+            <div className="h-10 w-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center mb-4">
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.35-1.86M17 20H7m10 0v-2a5 5 0 00-10 0v2m8-9a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </div>
+            <h3 className="text-3xl font-bold mb-1">Contacts</h3>
+            <p className="text-slate-500 dark:text-slate-400">Manage your secure contact network and trust settings.</p>
+          </button>
+        </section>
+
+        {isAdmin && (
+          <section className="rounded-2xl p-6 bg-gradient-to-r from-sky-500 to-violet-500 text-white shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="text-2xl font-extrabold mb-1">Admin Control Center</h3>
+              <p className="text-white/90">Manage users, permissions, and policy enforcement from one secure view.</p>
+            </div>
+            <button
+              onClick={() => router.push('/admin')}
+              className="px-5 py-2.5 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-100 transition"
+            >
+              Open Admin Panel
+            </button>
+          </section>
+        )}
       </main>
     </div>
   );

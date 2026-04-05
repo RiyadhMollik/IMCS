@@ -8,6 +8,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -48,27 +50,27 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="secure-screen secure-grid-bg flex items-center justify-center p-4">
-      <div className="secure-panel w-full max-w-md p-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-4">🛡️</div>
-          <p className="secure-subtitle uppercase tracking-[0.18em] mb-2">Personnel Onboarding</p>
-          <h1 className="secure-title text-3xl font-bold mb-2">Create Operator Account</h1>
-          <p className="text-slate-400">Register for encrypted messaging and calls</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#6d3fe5] via-[#a24fc8] to-[#2ab2e5] p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-7 sm:p-8 w-full max-w-[380px]">
+        <div className="text-center mb-6">
+          <div className="mx-auto mb-4 h-12 w-12 rounded-xl bg-[#1fb5e8] flex items-center justify-center">
+            <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
+            </svg>
+          </div>
+          <h1 className="text-[38px] leading-none font-bold text-slate-900 mb-2">Create Account</h1>
+          <p className="text-[26px] text-slate-500">Sign up for IMCS secure messaging</p>
         </div>
 
-        {/* Error Message */}
         {error && (
-          <div className="rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-rose-200 mb-6">
+          <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
             {error}
           </div>
         )}
 
-        {/* Register Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-slate-300 mb-2 uppercase tracking-wide">
+            <label htmlFor="username" className="block text-sm font-semibold text-slate-800 mb-2">
               Username
             </label>
             <input
@@ -77,13 +79,13 @@ export default function RegisterPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="secure-input"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26afe0] focus:border-transparent outline-none transition"
               placeholder="Choose a username"
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2 uppercase tracking-wide">
+            <label htmlFor="email" className="block text-sm font-semibold text-slate-800 mb-2">
               Email
             </label>
             <input
@@ -92,57 +94,100 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="secure-input"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26afe0] focus:border-transparent outline-none transition"
               placeholder="Enter your email"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2 uppercase tracking-wide">
+            <label htmlFor="password" className="block text-sm font-semibold text-slate-800 mb-2">
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="secure-input"
-              placeholder="Create a password"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full px-4 py-3 pr-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26afe0] focus:border-transparent outline-none transition"
+                placeholder="Create a password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-0 px-4 text-slate-500 hover:text-slate-700"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M3 3l18 18" />
+                    <path d="M10.6 10.6a2 2 0 102.8 2.8" />
+                    <path d="M9.9 5.1A10.9 10.9 0 0112 5c6 0 10 7 10 7a18.9 18.9 0 01-4 4.8" />
+                    <path d="M6.7 6.7A18.9 18.9 0 002 12s4 7 10 7a10.9 10.9 0 003.1-.5" />
+                  </svg>
+                ) : (
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-2 uppercase tracking-wide">
+            <label htmlFor="confirmPassword" className="block text-sm font-semibold text-slate-800 mb-2">
               Confirm Password
             </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={6}
-              className="secure-input"
-              placeholder="Confirm your password"
-            />
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full px-4 py-3 pr-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26afe0] focus:border-transparent outline-none transition"
+                placeholder="Confirm your password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-0 px-4 text-slate-500 hover:text-slate-700"
+                aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+              >
+                {showConfirmPassword ? (
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M3 3l18 18" />
+                    <path d="M10.6 10.6a2 2 0 102.8 2.8" />
+                    <path d="M9.9 5.1A10.9 10.9 0 0112 5c6 0 10 7 10 7a18.9 18.9 0 01-4 4.8" />
+                    <path d="M6.7 6.7A18.9 18.9 0 002 12s4 7 10 7a10.9 10.9 0 003.1-.5" />
+                  </svg>
+                ) : (
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="secure-btn w-full py-3 text-base"
+            className="w-full bg-[#1fb5e8] text-white py-3 px-6 rounded-lg font-semibold text-base hover:bg-[#18a8da] transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>
 
-        {/* Login Link */}
         <div className="mt-6 text-center">
-          <p className="text-slate-400">
+          <p className="text-slate-500">
             Already have an account?{' '}
-            <Link href="/login" className="text-cyan-300 hover:text-cyan-100 font-semibold transition">
+            <Link href="/login" className="text-[#8e45e6] hover:text-[#7d3ed2] font-semibold">
               Sign in
             </Link>
           </p>
